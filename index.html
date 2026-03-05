@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SharewithU | Community Bookshelf</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f5f5f0;
+            background-image: radial-gradient(at 0% 0%, rgba(139,115,85,.1) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(139,115,85,.1) 0px, transparent 50%); }
+        .serif { font-family: 'Noto Serif SC', serif; }
+        .book-spine { transition: all .4s cubic-bezier(.34,1.56,.64,1); transform-style: preserve-3d; }
+        .book-spine:hover { transform: translateY(-8px) rotateY(-5deg);
+            box-shadow: 0 20px 40px -5px rgba(0,0,0,.2), 0 10px 20px -5px rgba(0,0,0,.1); }
+        .glass-modal { background: rgba(255,255,255,.95); backdrop-filter: blur(20px); }
+        .note-card { background: linear-gradient(135deg,#fef9e7,#fcf3cf); position:relative; overflow:hidden; }
+        .note-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg,#f59e0b,#d97706); }
+        @keyframes slideIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        .animate-slide-in { animation: slideIn .4s ease-out forwards; }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        .animate-fade-in { animation: fadeIn .3s ease-out forwards; }
+        .tab-active { border-bottom: 2px solid #8b7355; color: #8b7355; font-weight:600; }
+        .scrollbar-hide::-webkit-scrollbar { display:none; }
+        .scrollbar-hide { -ms-overflow-style:none; scrollbar-width:none; }
+        .login-bg { background: linear-gradient(135deg,#667eea,#764ba2); }
+        .book-cover-gradient-1 { background:linear-gradient(135deg,#667eea,#764ba2); }
+        .book-cover-gradient-2 { background:linear-gradient(135deg,#f093fb,#f5576c); }
+        .book-cover-gradient-3 { background:linear-gradient(135deg,#4facfe,#00f2fe); }
+        .book-cover-gradient-4 { background:linear-gradient(135deg,#43e97b,#38f9d7); }
+        .book-cover-gradient-5 { background:linear-gradient(135deg,#fa709a,#fee140); }
+        .book-cover-gradient-6 { background:linear-gradient(135deg,#30cfd0,#330867); }
+        .book-cover-gradient-7 { background:linear-gradient(135deg,#a8edea,#fed6e3); }
+        .book-cover-gradient-8 { background:linear-gradient(135deg,#ff9a9e,#fecfef); }
+        #toast { transition: opacity .4s; }
+        #user-grid { max-height:260px; overflow-y:auto; }
+        @keyframes shake { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-2.5deg)} 75%{transform:rotate(2.5deg)} }
+        .shake-card { animation: shake 0.35s ease-in-out infinite; }
+        .save-badge { position:fixed; bottom:20px; right:20px; background:#fff; padding:10px 16px;
+            border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.12); border:1px solid #e5e7eb;
+            z-index:200; display:flex; align-items:center; gap:8px; font-size:13px; color:#374151; }
+        .save-dot { width:8px; height:8px; border-radius:50%; background:#10b981; animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    </style>
+</head>
+<body class="min-h-screen text-stone-800">
+
+<!-- Save badge -->
+<div id="save-badge" class="save-badge hidden">
+    <div class="save-dot"></div>
+    <span id="save-text">已保存</span>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-16 left-1/2 -translate-x-1/2 z-[300] px-5 py-3 rounded-xl text-white text-sm font-medium shadow-xl opacity-0 pointer-events-none"></div>
+
+<!-- ══════════════════════════════════════════
+     LOGIN MODAL
+══════════════════════════════════════════ -->
+<div id="login-modal" class="fixed inset-0 z-50 flex items-center justify-center login-bg">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 m-4 animate-slide-in">
+
+        <div class="text-center mb-7">
+            <div class="w-16 h-16 bg-gradient-to-br from-amber-600 to-amber-800 rounded-full flex items-center justify-center text-white mx-auto mb-4 shadow-lg">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-stone-900 serif">SharewithU</h2>
+            <p class="text-stone-500 mt-1 text-sm">选择你的身份，或添加新用户</p>
+        </div>
+
+        <!-- 用户选择面板 -->
+        <div id="user-pick-panel">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-stone-400 uppercase tracking-wider">选择身份</span>
+                <button id="edit-btn" class="text-xs text-stone-400 hover:text-red-500 transition-colors font-medium px-2 py-1 rounded-lg hover:bg-red-50">管理</button>
+            </div>
+            <div id="user-grid" class="grid grid-cols-3 gap-3 mb-5 min-h-[72px]"></div>
+            <button id="add-user-btn" class="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-stone-300 rounded-xl text-stone-500 hover:border-amber-400 hover:text-amber-700 hover:bg-amber-50 transition-all text-sm font-medium">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                添加新用户
+            </button>
+        </div>
+
+        <!-- 添加新用户面板 -->
+        <div id="add-user-panel" class="hidden space-y-4">
+            <div class="flex items-center gap-3 mb-1">
+                <button id="back-btn" class="text-stone-400 hover:text-stone-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <span class="text-sm font-semibold text-stone-700">添加新用户</span>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-stone-700 mb-2">选择头像</label>
+                <div id="avatar-picker" class="flex gap-2 flex-wrap"></div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-stone-700 mb-1">你叫什么名字？</label>
+                <input type="text" id="new-user-name" maxlength="16"
+                    class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+                    placeholder="输入你的名字或昵称">
+            </div>
+            <div id="add-user-error" class="text-red-500 text-sm hidden"></div>
+            <button id="confirm-add-btn" class="w-full bg-amber-700 text-white py-2.5 rounded-lg hover:bg-amber-800 transition-colors font-medium">加入书架</button>
+        </div>
+
+        <div class="mt-6 pt-5 border-t border-stone-100 text-xs text-stone-400 text-center">
+            数据保存在本地浏览器，切换身份不丢失任何数据
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════════ -->
+<div id="main-app" class="hidden">
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-amber-700 to-amber-900 rounded-lg flex items-center justify-center text-white shadow-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-stone-900 serif">SharewithU</h1>
+                        <p class="text-xs text-stone-500">Community Bookshelf</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="hidden md:flex items-center gap-3 text-sm text-stone-600 bg-stone-100 px-4 py-2 rounded-full">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span id="total-books">0 本书在架</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="text-right hidden sm:block">
+                            <div id="current-user-name" class="text-sm font-medium text-stone-900"></div>
+                            <div class="text-xs text-stone-500">在线</div>
+                        </div>
+                        <div class="relative group">
+                            <button id="user-avatar" class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-100 to-amber-300 flex items-center justify-center text-xl cursor-pointer hover:ring-2 hover:ring-amber-500 transition-all shadow-sm"></button>
+                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-stone-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <div class="py-1">
+                                    <button id="export-btn" class="w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 transition-colors flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                        导出备份
+                                    </button>
+                                    <div class="border-t border-stone-200 my-1"></div>
+                                    <button id="logout-btn" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">切换用户</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="add-book-btn" class="bg-stone-800 hover:bg-stone-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        推荐书籍
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex gap-6 items-start">
+        <div class="flex-1 min-w-0">
+        <div class="mb-8 flex flex-wrap gap-3 items-center justify-between">
+            <div class="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+                <button class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-stone-800 text-white transition-all" data-filter="all">全部</button>
+                <button class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white text-stone-600 hover:bg-stone-100 transition-all" data-filter="available">可借阅</button>
+                <button class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white text-stone-600 hover:bg-stone-100 transition-all" data-filter="borrowed">借出中</button>
+                <button class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white text-stone-600 hover:bg-stone-100 transition-all" data-filter="online">线上资源</button>
+                <button class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white text-stone-600 hover:bg-stone-100 transition-all" data-filter="offline">实体书</button>
+                <button class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white text-stone-600 hover:bg-stone-100 transition-all" data-filter="my-books">我推荐的</button>
+            </div>
+            <div class="relative">
+                <input type="text" id="search-input" placeholder="搜索书名、作者..."
+                    class="pl-10 pr-4 py-2 bg-white border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 w-64">
+                <svg class="w-4 h-4 text-stone-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+        </div>
+        <div id="empty-state" class="hidden text-center py-20">
+            <div class="text-6xl mb-4">📚</div>
+            <h3 class="text-xl font-medium text-stone-900 mb-2">还没有书籍</h3>
+            <p class="text-stone-500 mb-6">成为第一个推荐书籍的人吧</p>
+            <button id="empty-add-btn" class="bg-amber-700 text-white px-6 py-2 rounded-lg hover:bg-amber-800 transition-colors">推荐第一本书</button>
+        </div>
+        <div id="bookshelf" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+        </div><!-- /left -->
+
+        <!-- 右侧双榜单 -->
+        <aside class="hidden lg:block w-64 flex-shrink-0 space-y-4">
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden sticky top-24">
+                <div class="px-4 py-3 border-b border-stone-100">
+                    <h3 id="like-board-title" class="text-sm font-black text-amber-400 uppercase tracking-wide">大家都爱…</h3>
+                </div>
+                <div id="like-leaderboard" class="p-3 space-y-1 max-h-60 overflow-y-auto">
+                    <div class="text-xs text-stone-400 text-center py-3">暂无数据</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
+                <div class="px-4 py-3 border-b border-stone-100">
+                    <h3 id="dislike-board-title" class="text-sm font-black text-stone-900 uppercase tracking-wide">大家都雷…</h3>
+                </div>
+                <div id="dislike-leaderboard" class="p-3 space-y-1 max-h-60 overflow-y-auto">
+                    <div class="text-xs text-stone-400 text-center py-3">暂无数据</div>
+                </div>
+            </div>
+        </aside>
+        </div><!-- /flex -->
+    </main>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ADD BOOK MODAL
+══════════════════════════════════════════ -->
+<div id="add-book-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="add-book-overlay"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+        <div class="glass-modal w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col animate-slide-in">
+            <div class="flex justify-between items-center p-6 border-b border-stone-200">
+                <h2 class="text-xl font-bold text-stone-900 serif">推荐新书籍</h2>
+                <button id="close-add-book-btn" class="text-stone-400 hover:text-stone-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6">
+                <form id="add-book-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-stone-700 mb-1">书名 <span class="text-red-500">*</span></label>
+                            <input type="text" name="title" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="输入书名">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-stone-700 mb-1">作者 <span class="text-red-500">*</span></label>
+                            <input type="text" name="author" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="输入作者姓名">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">分类</label>
+                            <input type="text" name="category" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：技术/文学/历史">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">出版年份</label>
+                            <input type="text" name="year" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：2023">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">书籍简介</label>
+                        <textarea name="description" rows="3" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none resize-none" placeholder="简要介绍这本书的内容..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-3">获取方式 <span class="text-red-500">*</span></label>
+                        <div class="flex gap-4">
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="type" value="offline" checked class="sr-only peer">
+                                <div class="p-4 rounded-lg border-2 border-stone-200 peer-checked:border-amber-500 peer-checked:bg-amber-50 transition-all text-center">
+                                    <div class="text-2xl mb-1">📖</div>
+                                    <div class="font-medium text-stone-900">实体书</div>
+                                    <div class="text-xs text-stone-500">需要线下交接</div>
+                                </div>
+                            </label>
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="type" value="online" class="sr-only peer">
+                                <div class="p-4 rounded-lg border-2 border-stone-200 peer-checked:border-amber-500 peer-checked:bg-amber-50 transition-all text-center">
+                                    <div class="text-2xl mb-1">💻</div>
+                                    <div class="font-medium text-stone-900">线上资源</div>
+                                    <div class="text-xs text-stone-500">提供下载链接</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="offline-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">当前持有者 <span class="text-red-500">*</span></label>
+                            <input type="text" name="holder" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="姓名或联系方式">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">存放位置 <span class="text-red-500">*</span></label>
+                            <input type="text" name="location" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：办公室A-302">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">联系方式</label>
+                            <input type="text" name="contact" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="邮箱或手机号">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">借阅规则</label>
+                            <input type="text" name="rules" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：请在一周内归还">
+                        </div>
+                    </div>
+                    <div id="online-form" class="space-y-4 hidden">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">资源链接 <span class="text-red-500">*</span></label>
+                            <input type="url" name="url" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="https://...">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-stone-700 mb-1">格式</label>
+                                <select name="format" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none">
+                                    <option>PDF</option><option>EPUB</option><option>MOBI</option><option>网页</option><option>其他</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-stone-700 mb-1">文件大小</label>
+                                <input type="text" name="size" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：2.4MB">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">访问密码（如有）</label>
+                            <input type="text" name="password" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="留空表示无需密码">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">备注说明</label>
+                            <input type="text" name="note" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：需要内网访问权限">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">封面颜色</label>
+                        <div class="flex gap-3 flex-wrap" id="cover-colors"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="p-6 border-t border-stone-200 bg-stone-50 flex justify-end gap-3">
+                <button id="cancel-add-book-btn" class="px-6 py-2 border border-stone-300 rounded-lg text-stone-700 hover:bg-stone-100 transition-colors">取消</button>
+                <button id="submit-book-btn" class="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-900 transition-colors font-medium">推荐书籍</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     EDIT BOOK MODAL (新增)
+══════════════════════════════════════════ -->
+<div id="edit-book-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="edit-book-overlay"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+        <div class="glass-modal w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col animate-slide-in">
+            <div class="flex justify-between items-center p-6 border-b border-stone-200">
+                <h2 class="text-xl font-bold text-stone-900 serif">编辑推荐书籍</h2>
+                <button id="close-edit-book-btn" class="text-stone-400 hover:text-stone-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6">
+                <form id="edit-book-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-stone-700 mb-1">书名 <span class="text-red-500">*</span></label>
+                            <input type="text" name="title" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="输入书名">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-stone-700 mb-1">作者 <span class="text-red-500">*</span></label>
+                            <input type="text" name="author" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="输入作者姓名">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">分类</label>
+                            <input type="text" name="category" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：技术/文学/历史">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">出版年份</label>
+                            <input type="text" name="year" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：2023">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">书籍简介</label>
+                        <textarea name="description" rows="3" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none resize-none" placeholder="简要介绍这本书的内容..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-3">获取方式 <span class="text-red-500">*</span></label>
+                        <div class="flex gap-4">
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="type" value="offline" checked class="sr-only peer">
+                                <div class="p-4 rounded-lg border-2 border-stone-200 peer-checked:border-amber-500 peer-checked:bg-amber-50 transition-all text-center">
+                                    <div class="text-2xl mb-1">📖</div>
+                                    <div class="font-medium text-stone-900">实体书</div>
+                                    <div class="text-xs text-stone-500">需要线下交接</div>
+                                </div>
+                            </label>
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="type" value="online" class="sr-only peer">
+                                <div class="p-4 rounded-lg border-2 border-stone-200 peer-checked:border-amber-500 peer-checked:bg-amber-50 transition-all text-center">
+                                    <div class="text-2xl mb-1">💻</div>
+                                    <div class="font-medium text-stone-900">线上资源</div>
+                                    <div class="text-xs text-stone-500">提供下载链接</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="edit-offline-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">当前持有者 <span class="text-red-500">*</span></label>
+                            <input type="text" name="holder" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="姓名或联系方式">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">存放位置 <span class="text-red-500">*</span></label>
+                            <input type="text" name="location" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：办公室A-302">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">联系方式</label>
+                            <input type="text" name="contact" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="邮箱或手机号">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">借阅规则</label>
+                            <input type="text" name="rules" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：请在一周内归还">
+                        </div>
+                    </div>
+                    <div id="edit-online-form" class="space-y-4 hidden">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">资源链接 <span class="text-red-500">*</span></label>
+                            <input type="url" name="url" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="https://...">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-stone-700 mb-1">格式</label>
+                                <select name="format" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none">
+                                    <option>PDF</option><option>EPUB</option><option>MOBI</option><option>网页</option><option>其他</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-stone-700 mb-1">文件大小</label>
+                                <input type="text" name="size" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：2.4MB">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">访问密码（如有）</label>
+                            <input type="text" name="password" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="留空表示无需密码">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">备注说明</label>
+                            <input type="text" name="note" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：需要内网访问权限">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">封面颜色</label>
+                        <div class="flex gap-3 flex-wrap" id="edit-cover-colors"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="p-6 border-t border-stone-200 bg-stone-50 flex justify-end gap-3">
+                <button id="cancel-edit-book-btn" class="px-6 py-2 border border-stone-300 rounded-lg text-stone-700 hover:bg-stone-100 transition-colors">取消</button>
+                <button id="submit-edit-book-btn" class="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-900 transition-colors font-medium">保存更改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BOOK DETAIL MODAL
+══════════════════════════════════════════ -->
+<div id="book-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="book-modal-overlay"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+        <div class="glass-modal w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col md:flex-row animate-slide-in">
+            <div class="md:w-1/3 bg-gradient-to-b from-stone-100 to-stone-50 p-6 flex flex-col items-center border-r border-stone-200">
+                <div id="modal-cover" class="w-40 h-56 rounded-lg shadow-2xl mb-4 transform hover:scale-105 transition-transform duration-300 flex items-center justify-center text-white text-center p-4"></div>
+                <div class="text-center w-full">
+                    <span id="modal-status" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mb-3">可借阅</span>
+                    <div id="modal-location" class="text-sm text-stone-600 mb-4 p-3 bg-white rounded-lg border border-stone-200"></div>
+                    <button id="action-btn" class="w-full bg-stone-800 text-white py-2.5 rounded-lg hover:bg-stone-900 transition-colors text-sm font-medium">我要借阅</button>
+                    <div id="return-btn-wrap"></div>
+                    <div id="recommendation-feedback" class="hidden mt-3">
+                        <p class="text-xs text-stone-500 mb-2">对推荐人评价：</p>
+                        <div class="flex gap-2">
+                            <button id="like-btn" class="flex-1 bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">👍 点赞</button>
+                            <button id="dislike-btn" class="flex-1 bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium">👎 点踩</button>
+                        </div>
+                    </div>
+                    <div id="owner-actions" class="hidden mt-3 flex gap-2">
+                        <button id="edit-book-btn" class="flex-1 bg-blue-50 text-blue-600 border border-blue-200 py-2 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">编辑推荐</button>
+                        <button id="delete-book-btn" class="flex-1 bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium">删除推荐</button>
+                    </div>
+                </div>
+            </div>
+            <div class="md:w-2/3 flex flex-col h-full">
+                <div class="flex border-b border-stone-200 bg-white/50">
+                    <button class="tab-btn tab-active flex-1 py-4 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors" data-tab="info">基本信息</button>
+                    <button class="tab-btn flex-1 py-4 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors" data-tab="readers">阅读者</button>
+                    <button class="tab-btn flex-1 py-4 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors" data-tab="notes">备注</button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-6 bg-white/30">
+                    <div id="tab-info" class="tab-content space-y-4">
+                        <div>
+                            <h2 id="modal-title" class="text-2xl font-bold text-stone-900 serif mb-1"></h2>
+                            <p id="modal-author" class="text-stone-600 text-lg mb-2"></p>
+                            <div class="flex gap-2 mb-4 flex-wrap">
+                                <span id="modal-category" class="px-2 py-1 bg-stone-200 text-stone-700 text-xs rounded"></span>
+                                <span id="modal-year" class="px-2 py-1 bg-stone-200 text-stone-700 text-xs rounded"></span>
+                                <span id="modal-added-by" class="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded"></span>
+                            </div>
+                        </div>
+                        <p id="modal-description" class="text-stone-600 leading-relaxed"></p>
+                        <div class="mt-6 pt-6 border-t border-stone-200">
+                            <h3 class="text-sm font-semibold text-stone-900 mb-3">获取途径详情</h3>
+                            <div id="modal-access-details" class="space-y-2 text-sm text-stone-600"></div>
+                        </div>
+                        <div id="recommendation-ratings" class="mt-6 pt-6 border-t border-stone-200">
+                            <h3 class="text-sm font-semibold text-stone-900 mb-3">推荐评价</h3>
+                            <div id="ratings-display" class="flex gap-2 flex-wrap"></div>
+                        </div>
+                    </div>
+                    <div id="tab-readers" class="tab-content hidden">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-stone-900">阅读历史</h3>
+                            <span id="reader-count" class="text-sm text-stone-500"></span>
+                        </div>
+                        <div id="readers-list" class="space-y-3"></div>
+                    </div>
+                    <div id="tab-notes" class="tab-content hidden">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-stone-900">书友备注</h3>
+                            <button id="add-note-btn" class="text-sm text-amber-700 hover:text-amber-800 font-medium flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                写备注
+                            </button>
+                        </div>
+                        <div id="notes-list" class="space-y-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════
+   ⚙️  配置区 — 部署前填入你的 JSONbin 信息
+   按照底部说明文档获取这两个值
+══════════════════════════════════════════ */
+const JSONBIN_BIN_ID  = '69a93d93ae596e708f614d79';   // 例：'6623a1f7acd3cb34a8398abc'
+const JSONBIN_API_KEY = '$2a$10$uKFcEoyvbyK3SF3lxrKfyuibP5PTEgFcCioxGP4mAGUny4bTnKoI6';   // 例：'$2a$10$xxxxxxxxxxxxxxxxxxxx'
+
+/* ══════════════════════════════════════════
+   数据层 — JSONbin.io 云存储
+   回退：若未配置则使用 localStorage（单机模式）
+══════════════════════════════════════════ */
+const LS_KEY  = 'bookshelf_v1';
+const LS_SESS = 'bookshelf_session';
+const USE_CLOUD = !!(JSONBIN_BIN_ID && JSONBIN_API_KEY);
+
+async function fetchStore() {
+    if (USE_CLOUD) {
+        try {
+            const r = await fetch(
+                `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`,
+                { headers: { 'X-Master-Key': JSONBIN_API_KEY } }
+            );
+            if (r.ok) {
+                const j = await r.json();
+                return j.record;
+            }
+        } catch(e) { console.warn('JSONbin 读取失败，使用本地缓存', e); }
+    }
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return { users: [], books: [], notes: {} };
+}
+
+async function saveStore() {
+    // 本地缓存先写
+    try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch(e) {}
+
+    if (USE_CLOUD) {
+        try {
+            const r = await fetch(
+                `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_API_KEY
+                    },
+                    body: JSON.stringify(store)
+                }
+            );
+            if (r.ok) { flashSaved('☁️ 已同步'); return; }
+        } catch(e) { console.warn('JSONbin 保存失败', e); }
+        flashSaved('⚠️ 同步失败（已保存本地）');
+    } else {
+        flashSaved('✓ 已保存');
+    }
+}
+
+// 每8秒拉取一次最新数据
+let _syncTimer = null;
+function startAutoSync() {
+    if (!USE_CLOUD) return;
+    _syncTimer = setInterval(async () => {
+        try {
+            const fresh = await fetchStore();
+            if (JSON.stringify(fresh) !== JSON.stringify(store)) {
+                store = fresh;
+                if (!document.getElementById('login-modal').classList.contains('hidden')) {
+                    renderUserGrid();
+                } else {
+                    renderBooks();
+                }
+            }
+        } catch(e) {}
+    }, 8000);
+}
+
+/* ══════════════════════════════════════════
+   App state
+══════════════════════════════════════════ */
+let store = { users: [], books: [], notes: {} };
+let currentUser = null;
+let currentBook = null;
+let currentFilter = 'all';
+let editModeOn = false;
+let selectedAvatar = '🐼';
+
+const AVATARS = ['🐼','🦊','🐯','🦁','🐸','🐙','🦄','🐺','🦋','🐻','🐧','🦉','🐨','🦝','🐬','🦔'];
+
+/* ══════════════════════════════════════════
+   UI helpers
+══════════════════════════════════════════ */
+let _saveTimer, _toastTimer;
+function flashSaved(msg = '✓ 已保存') {
+    const el = document.getElementById('save-badge');
+    document.getElementById('save-text').textContent = msg;
+    el.classList.remove('hidden');
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(() => el.classList.add('hidden'), 2500);
+}
+
+function showToast(msg, bg = '#16a34a') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.style.background = bg;
+    el.style.opacity = '1';
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 2600);
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+/* ══════════════════════════════════════════
+   Boot
+══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById('login-modal').classList.add('hidden');
+    showLoading(true);
+
+    store = await fetchStore();
+
+    initCoverColors();
+    bindStaticEvents();
+    startAutoSync();
+    showLoading(false);
+
+    const savedUsername = localStorage.getItem(LS_SESS);
+    if (savedUsername) {
+        const user = store.users.find(u => u.username === savedUsername);
+        if (user) {
+            currentUser = { username: user.username, displayName: user.displayName, avatar: user.avatar };
+            showMainApp();
+            return;
+        }
+    }
+    showLoginModal();
+});
+
+function showLoading(on) {
+    let el = document.getElementById('_loading');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = '_loading';
+        el.className = 'fixed inset-0 z-[999] flex items-center justify-center login-bg';
+        el.innerHTML = `<div class="text-white text-center">
+            <div class="text-5xl mb-4 animate-bounce">📚</div>
+            <div class="text-lg font-medium">正在连接书架...</div>
+        </div>`;
+        document.body.appendChild(el);
+    }
+    el.style.display = on ? 'flex' : 'none';
+}
+
+/* ══════════════════════════════════════════
+   Bind all events statically (no inline onclick)
+══════════════════════════════════════════ */
+function bindStaticEvents() {
+    // Login panel
+    document.getElementById('edit-btn').addEventListener('click', toggleEditMode);
+    document.getElementById('add-user-btn').addEventListener('click', showAddUserPanel);
+    document.getElementById('back-btn').addEventListener('click', showUserPickPanel);
+    document.getElementById('confirm-add-btn').addEventListener('click', handleAddUser);
+    document.getElementById('new-user-name').addEventListener('keydown', e => { if (e.key === 'Enter') handleAddUser(); });
+
+    // User grid delegation
+    document.getElementById('user-grid').addEventListener('click', e => {
+        const card = e.target.closest('[data-username]');
+        if (!card) return;
+        const username = card.dataset.username;
+        if (card.dataset.action === 'delete') { deleteUser(username); return; }
+        if (!editModeOn) loginAs(username);
+    });
+
+    // Main app
+    document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('export-btn').addEventListener('click', exportData);
+    document.getElementById('add-book-btn').addEventListener('click', openAddBookModal);
+    document.getElementById('empty-add-btn').addEventListener('click', openAddBookModal);
+    document.getElementById('search-input').addEventListener('input', e => {
+        const t = e.target.value.toLowerCase();
+        renderBooks(store.books.filter(b =>
+            b.title.toLowerCase().includes(t) || b.author.toLowerCase().includes(t)));
+    });
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentFilter = btn.dataset.filter;
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                const on = b.dataset.filter === currentFilter;
+                b.classList.toggle('bg-stone-800', on);
+                b.classList.toggle('text-white', on);
+                b.classList.toggle('bg-white', !on);
+                b.classList.toggle('text-stone-600', !on);
+            });
+            renderBooks();
+        });
+    });
+
+    // Add book modal
+    document.getElementById('add-book-overlay').addEventListener('click', closeAddBookModal);
+    document.getElementById('close-add-book-btn').addEventListener('click', closeAddBookModal);
+    document.getElementById('cancel-add-book-btn').addEventListener('click', closeAddBookModal);
+    document.getElementById('submit-book-btn').addEventListener('click', submitBook);
+    document.querySelectorAll('input[name="type"]').forEach(r =>
+        r.addEventListener('change', toggleAccessForm));
+
+    // Edit book modal (新增)
+    document.getElementById('edit-book-overlay').addEventListener('click', closeEditBookModal);
+    document.getElementById('close-edit-book-btn').addEventListener('click', closeEditBookModal);
+    document.getElementById('cancel-edit-book-btn').addEventListener('click', closeEditBookModal);
+    document.getElementById('submit-edit-book-btn').addEventListener('click', submitEditBook);
+    document.querySelectorAll('input[name="e-type"]').forEach(r =>
+        r.addEventListener('change', toggleEditAccessForm));
+
+    // Book modal
+    document.getElementById('book-modal-overlay').addEventListener('click', closeBookModal);
+    document.getElementById('edit-book-btn').addEventListener('click', openEditBookModal);
+    document.getElementById('delete-book-btn').addEventListener('click', deleteCurrentBook);
+    document.getElementById('like-btn').addEventListener('click', () => rateRecommendation('like'));
+    document.getElementById('dislike-btn').addEventListener('click', () => rateRecommendation('dislike'));
+    document.getElementById('add-note-btn').addEventListener('click', addNote);
+
+    // Tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    // Escape key
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        if (!document.getElementById('book-modal').classList.contains('hidden')) closeBookModal();
+        else if (!document.getElementById('add-book-modal').classList.contains('hidden')) closeAddBookModal();
+        else if (!document.getElementById('edit-book-modal').classList.contains('hidden')) closeEditBookModal();
+    });
+}
+
+/* ══════════════════════════════════════════
+   Auth / User management
+══════════════════════════════════════════ */
+function showLoginModal() {
+    editModeOn = false;
+    document.getElementById('login-modal').classList.remove('hidden');
+    document.getElementById('main-app').classList.add('hidden');
+    showUserPickPanel();
+}
+
+function showUserPickPanel() {
+    document.getElementById('user-pick-panel').classList.remove('hidden');
+    document.getElementById('add-user-panel').classList.add('hidden');
+    renderUserGrid();
+}
+
+function showAddUserPanel() {
+    document.getElementById('user-pick-panel').classList.add('hidden');
+    document.getElementById('add-user-panel').classList.remove('hidden');
+    document.getElementById('new-user-name').value = '';
+    document.getElementById('add-user-error').classList.add('hidden');
+    initAvatarPicker();
+    setTimeout(() => document.getElementById('new-user-name').focus(), 80);
+}
+
+function renderUserGrid() {
+    const grid = document.getElementById('user-grid');
+    const editBtn = document.getElementById('edit-btn');
+    editBtn.textContent = editModeOn ? '完成' : '管理';
+
+    if (!store.users.length) {
+        editModeOn = false;
+        grid.innerHTML = `<div class="col-span-3 text-center text-stone-400 text-sm py-4">还没有用户，先添加一个吧</div>`;
+        return;
+    }
+
+    grid.innerHTML = store.users.map(u => `
+        <div class="relative">
+            <button data-username="${u.username}" data-action="login"
+                class="w-full flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all
+                    ${editModeOn
+                        ? 'border-red-200 bg-red-50 shake-card cursor-default'
+                        : 'border-stone-100 hover:border-amber-400 hover:bg-amber-50 cursor-pointer'}">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-2xl shadow-sm">
+                    ${u.avatar}
+                </div>
+                <span class="text-xs font-medium text-stone-700 truncate w-full text-center">${u.displayName}</span>
+            </button>
+            ${editModeOn
+                ? `<button data-username="${u.username}" data-action="delete"
+                        class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md z-10 text-xs font-bold leading-none">✕</button>`
+                : ''}
+        </div>`).join('');
+}
+
+function toggleEditMode() {
+    editModeOn = !editModeOn;
+    renderUserGrid();
+}
+
+function loginAs(username) {
+    const user = store.users.find(u => u.username === username);
+    if (!user) return;
+    currentUser = { username: user.username, displayName: user.displayName, avatar: user.avatar };
+    localStorage.setItem('bookshelf_session', username);
+    showMainApp();
+    showToast(`欢迎，${user.displayName} 👋`);
+}
+
+function handleAddUser() {
+    const name = document.getElementById('new-user-name').value.trim();
+    const errEl = document.getElementById('add-user-error');
+    if (!name) { errEl.textContent = '请输入你的名字'; errEl.classList.remove('hidden'); return; }
+
+    let username = name;
+    let n = 2;
+    while (store.users.find(u => u.username === username)) username = name + (n++);
+
+    const newUser = { username, displayName: name, avatar: selectedAvatar, createdAt: new Date().toISOString() };
+    store.users.push(newUser);
+    saveStore();
+
+    currentUser = { username, displayName: name, avatar: selectedAvatar };
+    localStorage.setItem('bookshelf_session', username);
+    showMainApp();
+    showToast('欢迎加入书架 📚');
+}
+
+function deleteUser(username) {
+    const user = store.users.find(u => u.username === username);
+    if (!user) return;
+    if (!confirm(`确定要删除用户「${user.displayName}」吗？\n该用户添加的书籍和备注不会被删除。`)) return;
+    store.users = store.users.filter(u => u.username !== username);
+    saveStore();
+    if (!store.users.length) editModeOn = false;
+    renderUserGrid();
+    showToast(`已删除 ${user.displayName}`);
+}
+
+function logout() {
+    localStorage.removeItem('bookshelf_session');
+    currentUser = null;
+    currentBook = null;
+    currentFilter = 'all';
+    showLoginModal();
+}
+
+function showMainApp() {
+    document.getElementById('login-modal').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    document.getElementById('current-user-name').textContent = currentUser.displayName;
+    document.getElementById('user-avatar').textContent = currentUser.avatar;
+    renderBooks();
+    renderLeaderboards();
+}
+
+/* ══════════════════════════════════════════
+   Avatar picker
+══════════════════════════════════════════ */
+function initAvatarPicker() {
+    selectedAvatar = AVATARS[0];
+    document.getElementById('avatar-picker').innerHTML = AVATARS.map((a, i) => `
+        <button type="button" data-emoji="${a}"
+            class="avatar-opt w-10 h-10 rounded-full flex items-center justify-center text-xl border-2 transition-all hover:scale-110
+                   ${i === 0 ? 'border-amber-500 bg-amber-50 scale-110' : 'border-transparent bg-stone-100'}">
+            ${a}
+        </button>`).join('');
+
+    document.getElementById('avatar-picker').addEventListener('click', e => {
+        const btn = e.target.closest('.avatar-opt');
+        if (!btn) return;
+        selectedAvatar = btn.dataset.emoji;
+        document.querySelectorAll('.avatar-opt').forEach(b => {
+            const active = b === btn;
+            b.classList.toggle('border-amber-500', active);
+            b.classList.toggle('bg-amber-50', active);
+            b.classList.toggle('scale-110', active);
+            b.classList.toggle('border-transparent', !active);
+            b.classList.toggle('bg-stone-100', !active);
+        });
+    }, { once: false });
+}
+
+/* ══════════════════════════════════════════
+   Cover colors
+══════════════════════════════════════════ */
+function initCoverColors() {
+    document.getElementById('cover-colors').innerHTML = [1,2,3,4,5,6,7,8].map(i => `
+        <label class="cursor-pointer">
+            <input type="radio" name="cover" value="book-cover-gradient-${i}" ${i===1?'checked':''} class="sr-only peer">
+            <div class="w-12 h-12 rounded-lg book-cover-gradient-${i} peer-checked:ring-4 peer-checked:ring-amber-500 peer-checked:ring-offset-2 transition-all hover:scale-110"></div>
+        </label>`).join('');
+}
+
+/* ══════════════════════════════════════════
+   Render books
+══════════════════════════════════════════ */
+function renderBooks(books = store.books) {
+    const shelf = document.getElementById('bookshelf');
+    const empty = document.getElementById('empty-state');
+    shelf.innerHTML = '';
+
+    let list = books;
+    if      (currentFilter === 'my-books')  list = books.filter(b => b.addedBy === currentUser.username);
+    else if (currentFilter === 'available') list = books.filter(b => b.status === 'available');
+    else if (currentFilter === 'borrowed')  list = books.filter(b => b.status === 'borrowed');
+    else if (currentFilter === 'online')    list = books.filter(b => b.type === 'online');
+    else if (currentFilter === 'offline')   list = books.filter(b => b.type === 'offline');
+
+    document.getElementById('total-books').textContent = `${list.length} 本书在架`;
+    empty.classList.toggle('hidden', list.length > 0);
+    if (!list.length) return;
+
+    list.forEach((book, i) => {
+        const card = document.createElement('div');
+        card.className = 'book-spine cursor-pointer animate-fade-in';
+        card.style.animationDelay = `${i * 0.04}s`;
+
+        const borrowed = book.status === 'borrowed';
+        card.innerHTML = `
+            <div class="relative bg-white rounded-lg shadow-md overflow-hidden border border-stone-200 h-full flex flex-col">
+                <div class="h-48 ${book.cover} relative flex items-center justify-center p-4">
+                    <div class="text-white text-center">
+                        <div class="text-3xl mb-2">${book.type === 'online' ? '💻' : '📖'}</div>
+                        <h3 class="font-bold text-lg leading-tight serif line-clamp-3 drop-shadow-md">${book.title}</h3>
+                        <p class="text-sm text-white/90 mt-2 drop-shadow">${book.author}</p>
+                    </div>
+                    <div class="absolute top-2 right-2">
+                        <span class="w-2 h-2 ${borrowed ? 'bg-amber-500' : 'bg-green-500'} rounded-full block ring-2 ring-white shadow"></span>
+                    </div>
+                    ${book.addedBy === currentUser.username ? '<div class="absolute top-2 left-2 bg-white/90 text-stone-800 text-xs px-2 py-1 rounded-full font-medium">我的推荐</div>' : ''}
+                </div>
+                <div class="p-4 flex-1 flex flex-col">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs text-stone-500">${book.category || '未分类'}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full ${borrowed ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}">${borrowed ? '借出' : '可借'}</span>
+                    </div>
+                    ${borrowed ? `<div class="text-xs text-amber-600 mt-1 truncate">借：${book.currentBorrower}</div>` : ''}
+                    <p class="text-sm text-stone-600 line-clamp-2 mb-3 flex-1 mt-1">${book.description || '暂无简介'}</p>
+                    <div class="flex items-center justify-between text-xs text-stone-400 pt-2 border-t border-stone-100">
+                        <span>${book.readers?.length || 0} 人读过</span>
+                        <span class="flex items-center gap-1.5">
+                            ${(() => { const recs=book.recommendations||[],l=recs.filter(r=>r.action==='like').length,d=recs.filter(r=>r.action==='dislike').length; return recs.length?`<span class="text-green-500">👍${l}</span><span class="text-red-400">👎${d}</span>`:`<span>${book.type==='online'?'线上':'实体'}</span>`; })()}
+                        </span>
+                    </div>
+                </div>
+            </div>`;
+
+        card.addEventListener('click', () => openBookModal(book));
+        shelf.appendChild(card);
+    });
+    renderLeaderboards();
+}
+
+/* ══════════════════════════════════════════
+   Add book
+══════════════════════════════════════════ */
+function openAddBookModal() {
+    document.getElementById('add-book-modal').classList.remove('hidden');
+    document.getElementById('add-book-form').reset();
+    toggleAccessForm();
+    initCoverColors();
+}
+function closeAddBookModal() { document.getElementById('add-book-modal').classList.add('hidden'); }
+
+function toggleAccessForm() {
+    const type = document.querySelector('input[name="type"]:checked')?.value || 'offline';
+    document.getElementById('offline-form').classList.toggle('hidden', type !== 'offline');
+    document.getElementById('online-form').classList.toggle('hidden', type !== 'online');
+}
+
+function submitBook() {
+    const fd = new FormData(document.getElementById('add-book-form'));
+    const title = fd.get('title')?.trim();
+    const author = fd.get('author')?.trim();
+    if (!title || !author) { showToast('请填写书名和作者', '#dc2626'); return; }
+
+    const type = fd.get('type');
+    let access;
+    if (type === 'offline') {
+        const holder = fd.get('holder')?.trim();
+        const location = fd.get('location')?.trim();
+        if (!holder || !location) { showToast('请填写持有者和存放位置', '#dc2626'); return; }
+        access = { type:'offline', holder, location, contact: fd.get('contact')||'', rules: fd.get('rules')||'无特殊要求' };
+    } else {
+        const url = fd.get('url')?.trim();
+        if (!url) { showToast('请填写资源链接', '#dc2626'); return; }
+        access = { type:'online', url, format: fd.get('format')||'PDF', size: fd.get('size')||'', password: fd.get('password')||'', note: fd.get('note')||'' };
+    }
+
+    const book = {
+        id: Date.now(),
+        title, author,
+        category: fd.get('category') || '未分类',
+        year: fd.get('year') || '',
+        cover: fd.get('cover') || 'book-cover-gradient-1',
+        type, access,
+        status: 'available',
+        currentBorrower: null,
+        borrowedAt: null,
+        description: fd.get('description') || '',
+        readers: [],
+        addedBy: currentUser.username,
+        addedByName: currentUser.displayName,
+        addedAt: today(),
+        recommendations: [] // 新增：推荐评价数组
+    };
+
+    store.books.push(book);
+    saveStore();
+    closeAddBookModal();
+    renderBooks();
+    showToast('书籍推荐成功 ✓');
+}
+
+/* ══════════════════════════════════════════
+   Edit book (新增功能)
+══════════════════════════════════════════ */
+function openEditBookModal() {
+    if (!currentBook || currentBook.addedBy !== currentUser.username) return;
+    document.getElementById('edit-book-modal').classList.remove('hidden');
+    const form = document.getElementById('edit-book-form');
+    form.reset(); // 重置表单以清除任何残留数据
+
+    // 预填充当前书籍的原始数据，用户只需修改需要更改的部分
+    form.querySelector('[name="title"]').value = currentBook.title || '';
+    form.querySelector('[name="author"]').value = currentBook.author || '';
+    form.querySelector('[name="category"]').value = currentBook.category || '';
+    form.querySelector('[name="year"]').value = currentBook.year || '';
+    form.querySelector('[name="description"]').value = currentBook.description || '';
+    form.querySelector(`[name="type"][value="${currentBook.type}"]`).checked = true;
+
+    if (currentBook.type === 'offline') {
+        form.querySelector('[name="holder"]').value = currentBook.access.holder || '';
+        form.querySelector('[name="location"]').value = currentBook.access.location || '';
+        form.querySelector('[name="contact"]').value = currentBook.access.contact || '';
+        form.querySelector('[name="rules"]').value = currentBook.access.rules || '';
+    } else {
+        form.querySelector('[name="url"]').value = currentBook.access.url || '';
+        form.querySelector('[name="format"]').value = currentBook.access.format || 'PDF';
+        form.querySelector('[name="size"]').value = currentBook.access.size || '';
+        form.querySelector('[name="password"]').value = currentBook.access.password || '';
+        form.querySelector('[name="note"]').value = currentBook.access.note || '';
+    }
+
+    initEditCoverColors(); // 初始化封面颜色选择，保留当前封面
+    toggleEditAccessForm(); // 根据类型切换表单显示
+}
+
+function closeEditBookModal() { document.getElementById('edit-book-modal').classList.add('hidden'); }
+
+function toggleEditAccessForm() {
+    const type = document.getElementById('e-type-online')?.checked ? 'online' : 'offline';
+    document.getElementById('edit-offline-form').classList.toggle('hidden', type !== 'offline');
+    document.getElementById('edit-online-form').classList.toggle('hidden', type !== 'online');
+}
+
+function initEditCoverColors(selectedCover) {
+    selectedCover = selectedCover || (currentBook && currentBook.cover) || 'book-cover-gradient-1';
+    const container = document.getElementById('edit-cover-colors');
+    container.innerHTML = [1,2,3,4,5,6,7,8].map(i => {
+        const val = `book-cover-gradient-${i}`;
+        return `<label class="cursor-pointer">
+            <input type="radio" name="e-cover" value="${val}" ${val === selectedCover ? 'checked' : ''} class="sr-only peer">
+            <div class="w-12 h-12 rounded-lg ${val} peer-checked:ring-4 peer-checked:ring-amber-500 peer-checked:ring-offset-2 transition-all hover:scale-110"></div>
+        </label>`;
+    }).join('');
+}
+
+function submitEditBook() {
+    if (!currentBook || currentBook.addedBy !== currentUser.username) return;
+
+    // 全部用 id 直接读取，零依赖 FormData 和 name 属性
+    const title  = document.getElementById('e-title').value.trim();
+    const author = document.getElementById('e-author').value.trim();
+    if (!title)  { showToast('请填写书名', '#dc2626');  return; }
+    if (!author) { showToast('请填写作者', '#dc2626'); return; }
+
+    const type  = document.getElementById('e-type-online').checked ? 'online' : 'offline';
+    const cover = document.querySelector('input[name="e-cover"]:checked')?.value
+                  || currentBook.cover || 'book-cover-gradient-1';
+
+    let access;
+    if (type === 'offline') {
+        const holder   = document.getElementById('e-holder').value.trim();
+        const location = document.getElementById('e-location').value.trim();
+        if (!holder)   { showToast('请填写持有者', '#dc2626');  return; }
+        if (!location) { showToast('请填写存放位置', '#dc2626'); return; }
+        access = {
+            type: 'offline',
+            holder,
+            location,
+            contact: document.getElementById('e-contact').value.trim(),
+            rules:   document.getElementById('e-rules').value.trim() || '无特殊要求'
+        };
+    } else {
+        const url = document.getElementById('e-url').value.trim();
+        if (!url) { showToast('请填写资源链接', '#dc2626'); return; }
+        access = {
+            type:     'online',
+            url,
+            format:   document.getElementById('e-format').value,
+            size:     document.getElementById('e-size').value.trim(),
+            password: document.getElementById('e-password').value.trim(),
+            note:     document.getElementById('e-note').value.trim()
+        };
+    }
+
+    // 直接写回 store 里的对象引用
+    const bookInStore = store.books.find(b => b.id === currentBook.id);
+    if (!bookInStore) { showToast('书籍数据异常', '#dc2626'); return; }
+
+    bookInStore.title       = title;
+    bookInStore.author      = author;
+    bookInStore.category    = document.getElementById('e-category').value.trim() || '未分类';
+    bookInStore.year        = document.getElementById('e-year').value.trim();
+    bookInStore.description = document.getElementById('e-description').value.trim();
+    bookInStore.cover       = cover;
+    bookInStore.type        = type;
+    bookInStore.access      = access;
+    currentBook = bookInStore;  // 同步引用
+
+    saveStore();
+    closeEditBookModal();
+    openBookModal(currentBook);
+    renderBooks();
+    showToast('推荐书籍已更新 ✓');
+}
+
+/* ══════════════════════════════════════════
+   Book detail modal
+══════════════════════════════════════════ */
+function openBookModal(bookRef) {
+    currentBook = store.books.find(b => b.id === bookRef.id) || bookRef;
+
+    document.getElementById('modal-title').textContent       = currentBook.title;
+    document.getElementById('modal-author').textContent      = currentBook.author;
+    document.getElementById('modal-category').textContent    = currentBook.category || '未分类';
+    document.getElementById('modal-year').textContent        = currentBook.year || '未知年份';
+    document.getElementById('modal-added-by').textContent    = `推荐人: ${currentBook.addedByName || currentBook.addedBy}`;
+    document.getElementById('modal-description').textContent = currentBook.description || '暂无简介';
+
+    const cover = document.getElementById('modal-cover');
+    cover.className = `w-40 h-56 rounded-lg shadow-2xl mb-4 transform hover:scale-105 transition-transform duration-300 ${currentBook.cover} flex items-center justify-center text-white text-center p-4`;
+    cover.innerHTML = `<div><div class="text-4xl mb-2">${currentBook.type==='online'?'💻':'📖'}</div><h3 class="font-bold text-xl serif drop-shadow-md">${currentBook.title}</h3></div>`;
+
+    refreshModalStatus();
+    renderLocationPanel();
+    renderAccessDetails();
+    renderRecommendationRatings();
+    document.getElementById('owner-actions').classList.toggle('hidden', currentBook.addedBy !== currentUser.username);
+    renderReaders(currentBook.readers || []);
+    renderNotes(currentBook.id);
+    switchTab('info');
+    document.getElementById('book-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function refreshModalStatus() {
+    const statusEl   = document.getElementById('modal-status');
+    const actionBtn  = document.getElementById('action-btn');
+    const returnDiv  = document.getElementById('return-btn-wrap');
+    const feedbackDiv= document.getElementById('recommendation-feedback');
+    const borrowed   = currentBook.status === 'borrowed';
+
+    if (!borrowed) {
+        statusEl.className    = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mb-3';
+        statusEl.textContent  = '可借阅';
+        actionBtn.className   = 'w-full bg-stone-800 text-white py-2.5 rounded-lg hover:bg-stone-900 transition-colors text-sm font-medium';
+        actionBtn.textContent = currentBook.type === 'online' ? '获取资源' : '我要借阅';
+        actionBtn.onclick     = () => handleAccess();
+        returnDiv.innerHTML   = '';
+    } else {
+        statusEl.className    = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 mb-3';
+        statusEl.textContent  = `已借出 · ${currentBook.currentBorrower}`;
+        actionBtn.className   = 'w-full bg-stone-200 text-stone-500 py-2.5 rounded-lg text-sm font-medium cursor-default';
+        actionBtn.textContent = '预约提醒';
+        actionBtn.onclick     = () => showToast('📬 已设置提醒');
+        returnDiv.innerHTML   = currentBook.currentBorrower === currentUser.displayName
+            ? `<button id="return-btn" class="w-full mt-2 bg-blue-50 text-blue-700 border border-blue-200 py-2.5 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">归还书籍</button>`
+            : '';
+        const retBtn = document.getElementById('return-btn');
+        if (retBtn) retBtn.addEventListener('click', returnBook);
+    }
+
+    // 点赞/踩：所有非推荐人随时可评价，支持切换/取消
+    const isRecommender = currentBook.addedBy === currentUser.username;
+    if (isRecommender) {
+        feedbackDiv.classList.add('hidden');
+    } else {
+        feedbackDiv.classList.remove('hidden');
+        const myVote     = (currentBook.recommendations || []).find(r => r.user === currentUser.username);
+        const likeBtn    = document.getElementById('like-btn');
+        const dislikeBtn = document.getElementById('dislike-btn');
+        likeBtn.className    = `flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${myVote?.action === 'like'    ? 'bg-green-500 text-white border-green-500' : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100'}`;
+        dislikeBtn.className = `flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${myVote?.action === 'dislike' ? 'bg-red-500 text-white border-red-500'     : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'}`;
+        likeBtn.textContent    = myVote?.action === 'like'    ? '👍 已赞' : '👍 点赞';
+        dislikeBtn.textContent = myVote?.action === 'dislike' ? '👎 已踩' : '👎 点踩';
+    }
+}
+
+function renderLocationPanel() {
+    const el = document.getElementById('modal-location');
+    if (currentBook.type === 'online') {
+        el.innerHTML = `<div class="flex items-center gap-2 mb-1"><span>💻</span><span class="font-medium">线上资源</span></div>
+            <div class="text-xs text-stone-500">格式: ${currentBook.access.format||'未知'}</div>`;
+    } else {
+        const who = currentBook.status === 'borrowed'
+            ? `<span class="text-amber-700 font-medium">借阅中 · ${currentBook.currentBorrower}</span>`
+            : `<span class="font-medium">${currentBook.access.holder}</span>`;
+        el.innerHTML = `<div class="flex items-center gap-2 mb-1"><span>📍</span>${who}</div>
+            <div class="text-xs text-stone-500">${currentBook.access.location||''}</div>`;
+    }
+}
+
+function renderAccessDetails() {
+    const el = document.getElementById('modal-access-details');
+    if (currentBook.type === 'online') {
+        el.innerHTML = `
+            <div class="flex justify-between py-2 border-b border-stone-100"><span>链接</span>
+                <a href="${currentBook.access.url}" target="_blank" class="text-amber-700 hover:underline truncate max-w-xs">${currentBook.access.url}</a></div>
+            <div class="flex justify-between py-2 border-b border-stone-100"><span>格式</span><span>${currentBook.access.format||'-'}</span></div>
+            ${currentBook.access.password?`<div class="flex justify-between py-2 border-b border-stone-100"><span>密码</span><span class="font-mono bg-stone-100 px-2 rounded">${currentBook.access.password}</span></div>`:''}
+            ${currentBook.access.note?`<div class="mt-2 text-amber-700 bg-amber-50 p-2 rounded text-xs">${currentBook.access.note}</div>`:''}`;
+    } else {
+        el.innerHTML = `
+            <div class="flex justify-between py-2 border-b border-stone-100"><span>持有者</span><span class="font-medium">${currentBook.access.holder}</span></div>
+            <div class="flex justify-between py-2 border-b border-stone-100"><span>位置</span><span>${currentBook.access.location}</span></div>
+            ${currentBook.access.contact?`<div class="flex justify-between py-2 border-b border-stone-100"><span>联系方式</span><span class="text-amber-700">${currentBook.access.contact}</span></div>`:''}
+            ${currentBook.status==='borrowed'?`<div class="flex justify-between py-2 border-b border-stone-100"><span>借阅人</span><span class="text-amber-700 font-medium">${currentBook.currentBorrower}</span></div>
+                <div class="flex justify-between py-2 border-b border-stone-100"><span>借出日期</span><span>${currentBook.borrowedAt||'-'}</span></div>`:''}
+            <div class="mt-3 text-stone-500 text-xs bg-stone-50 p-3 rounded"><span class="font-medium">借阅规则：</span>${currentBook.access.rules||'无特殊要求'}</div>`;
+    }
+}
+
+function renderRecommendationRatings() {
+    const el      = document.getElementById('ratings-display');
+    const ratings = currentBook.recommendations || [];
+    const likes   = ratings.filter(r => r.action === 'like').length;
+    const dislikes= ratings.filter(r => r.action === 'dislike').length;
+    if (!ratings.length) {
+        el.innerHTML = '<div class="text-xs text-stone-400">暂无评价</div>';
+        return;
+    }
+    el.innerHTML = `<div class="flex items-center gap-3">
+        <span class="flex items-center gap-1 text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">👍 ${likes}</span>
+        <span class="flex items-center gap-1 text-sm font-medium text-red-500 bg-red-50 px-3 py-1 rounded-full">👎 ${dislikes}</span>
+    </div>`;
+}
+
+function closeBookModal() {
+    document.getElementById('book-modal').classList.add('hidden');
+    document.body.style.overflow = '';
+    currentBook = null;
+}
+
+/* ══════════════════════════════════════════
+   Borrow / Return
+══════════════════════════════════════════ */
+function handleAccess() {
+    if (currentBook.type === 'online') {
+        window.open(currentBook.access.url, '_blank');
+        if (!currentBook.readers.find(r => r.name === currentUser.displayName)) {
+            currentBook.readers.unshift({ name: currentUser.displayName, date: today(), avatar: currentUser.avatar });
+            saveStore();
+            renderReaders(currentBook.readers);
+        }
+        return;
+    }
+    if (currentBook.status === 'borrowed') {
+        showToast(`该书已被「${currentBook.currentBorrower}」借出`, '#d97706');
+        return;
+    }
+    if (!confirm(`确认借阅《${currentBook.title}》？\n持有者：${currentBook.access.holder}，位置：${currentBook.access.location}\n\n确认后书籍状态将更新为「已借出」`)) return;
+
+    currentBook.status = 'borrowed';
+    currentBook.currentBorrower = currentUser.displayName;
+    currentBook.borrowedAt = today();
+    if (!currentBook.readers.find(r => r.name === currentUser.displayName)) {
+        currentBook.readers.unshift({ name: currentUser.displayName, date: today(), avatar: currentUser.avatar });
+    }
+    saveStore();
+    refreshModalStatus();
+    renderLocationPanel();
+    renderAccessDetails();
+    renderReaders(currentBook.readers);
+    renderBooks();
+    showToast(`📗 借阅成功！请联系 ${currentBook.access.holder} 取书`);
+}
+
+function returnBook() {
+    if (!currentBook || currentBook.status !== 'borrowed') return;
+    if (!confirm(`确认归还《${currentBook.title}》？`)) return;
+    currentBook.status = 'available';
+    currentBook.currentBorrower = null;
+    currentBook.borrowedAt = null;
+    saveStore();
+    refreshModalStatus();
+    renderLocationPanel();
+    renderAccessDetails();
+    renderBooks();
+    showToast('📘 已归还，状态已更新', '#2563eb');
+}
+
+function rateRecommendation(action) {
+    if (!currentBook || currentBook.addedBy === currentUser.username) return;
+    if (!currentBook.recommendations) currentBook.recommendations = [];
+    const existing = currentBook.recommendations.find(r => r.user === currentUser.username);
+    if (existing && existing.action === action) {
+        // 再次点同一个 → 取消
+        currentBook.recommendations = currentBook.recommendations.filter(r => r.user !== currentUser.username);
+        showToast('已取消投票');
+    } else {
+        currentBook.recommendations = currentBook.recommendations.filter(r => r.user !== currentUser.username);
+        currentBook.recommendations.push({ user: currentUser.username, action });
+        showToast(action === 'like' ? '👍 已点赞推荐人' : '👎 已点踩推荐人');
+    }
+    saveStore();
+    refreshModalStatus();
+    renderRecommendationRatings();
+    renderLeaderboards();
+    renderBooks();
+}
+
+function deleteCurrentBook() {
+    if (!currentBook) return;
+    if (!confirm(`确定要删除《${currentBook.title}》吗？`)) return;
+    store.books = store.books.filter(b => b.id !== currentBook.id);
+    delete store.notes[currentBook.id];
+    saveStore();
+    closeBookModal();
+    renderBooks();
+    showToast('推荐书籍已删除');
+}
+
+/* ══════════════════════════════════════════
+   Readers & Notes
+══════════════════════════════════════════ */
+function renderReaders(readers) {
+    document.getElementById('reader-count').textContent = `${readers.length} 位读者`;
+    const el = document.getElementById('readers-list');
+    if (!readers.length) { el.innerHTML = '<div class="text-center text-stone-400 py-8">暂无阅读记录</div>'; return; }
+    el.innerHTML = readers.map(r => `
+        <div class="flex items-center gap-3 p-3 bg-white rounded-lg border border-stone-200">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-xl">${r.avatar}</div>
+            <div><div class="font-medium text-stone-900">${r.name}</div><div class="text-xs text-stone-500">阅读于 ${r.date}</div></div>
+        </div>`).join('');
+}
+
+function renderNotes(bookId) {
+    const el = document.getElementById('notes-list');
+    const notes = store.notes[bookId] || [];
+    if (!notes.length) { el.innerHTML = '<div class="text-center text-stone-400 py-8">暂无备注，成为第一个写备注的人吧</div>'; return; }
+    el.innerHTML = notes.map(n => `
+        <div class="note-card rounded-lg p-4 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-stone-800">${n.author}</span>
+                    <span class="text-xs text-stone-500">${n.date}</span>
+                </div>
+                <div class="flex gap-0.5">
+                    ${[1,2,3,4,5].map(i=>`<svg class="w-4 h-4 ${i<=n.rating?'text-amber-400 fill-current':'text-stone-300'}" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>`).join('')}
+                </div>
+            </div>
+            <p class="text-stone-700 text-sm leading-relaxed">${n.content}</p>
+        </div>`).join('');
+}
+
+function addNote() {
+    if (!currentBook) return;
+    const content = prompt('请输入您的阅读备注：');
+    if (!content?.trim()) return;
+    const rating = Math.min(5, Math.max(1, parseInt(prompt('请评分（1-5星）：', '5')) || 5));
+    if (!store.notes[currentBook.id]) store.notes[currentBook.id] = [];
+    store.notes[currentBook.id].unshift({ author: currentUser.displayName, date: today(), content: content.trim(), rating });
+    if (!currentBook.readers.find(r => r.name === currentUser.displayName)) {
+        currentBook.readers.unshift({ name: currentUser.displayName, date: today(), avatar: currentUser.avatar });
+    }
+    saveStore();
+    renderNotes(currentBook.id);
+    showToast('备注已保存 ✓');
+}
+
+/* ══════════════════════════════════════════
+   Tabs
+══════════════════════════════════════════ */
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('tab-active', b.dataset.tab === tab));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+    document.getElementById(`tab-${tab}`).classList.remove('hidden');
+}
+
+/* ══════════════════════════════════════════
+   双榜单
+══════════════════════════════════════════ */
+function calcLeaderboard() {
+    const stats = {};
+    store.users.forEach(u => {
+        stats[u.username] = { username: u.username, displayName: u.displayName, avatar: u.avatar, likes: 0, dislikes: 0, books: 0 };
+    });
+    store.books.forEach(book => {
+        const by = book.addedBy;
+        if (!stats[by]) stats[by] = { username: by, displayName: book.addedByName || by, avatar: '📚', likes: 0, dislikes: 0, books: 0 };
+        stats[by].books++;
+        (book.recommendations || []).forEach(r => {
+            if (r.action === 'like')    stats[by].likes++;
+            if (r.action === 'dislike') stats[by].dislikes++;
+        });
+    });
+    return Object.values(stats).filter(s => s.books > 0);
+}
+
+function renderLeaderboards() {
+    const all = calcLeaderboard();
+
+    // ── 点赞榜 ──
+    const likeList    = [...all].sort((a,b) => b.likes - a.likes);
+    const likeTitleEl = document.getElementById('like-board-title');
+    const likeEl      = document.getElementById('like-leaderboard');
+    if (!likeEl) return;
+    const topLiker = likeList.find(s => s.likes > 0);
+    if (likeTitleEl) likeTitleEl.innerHTML = topLiker
+        ? `大家都爱<span class="text-amber-400 font-black"> ${topLiker.displayName.toUpperCase()}</span>`
+        : '大家都爱…';
+    const likeFiltered = likeList.filter(s => s.likes > 0);
+    likeEl.innerHTML = likeFiltered.length ? likeFiltered.map((s,i) => {
+        const medals = ['🥇','🥈','🥉'];
+        const isMe = s.username === currentUser?.username;
+        return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-xl transition-colors ${isMe?'bg-amber-50 border border-amber-200':'hover:bg-stone-50'}">
+            <div class="w-5 text-center flex-shrink-0">${medals[i]||`<span class="text-xs font-bold text-stone-400">${i+1}</span>`}</div>
+            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-sm flex-shrink-0">${s.avatar}</div>
+            <div class="flex-1 min-w-0"><div class="text-xs font-semibold text-stone-800 truncate">${s.displayName}${isMe?' <span class="text-amber-500">我</span>':''}</div><div class="text-xs text-stone-400">${s.books}本推荐</div></div>
+            <div class="text-xs font-bold text-green-600 flex-shrink-0">👍${s.likes}</div>
+        </div>`;
+    }).join('') : '<div class="text-xs text-stone-400 text-center py-3">暂无数据</div>';
+
+    // ── 点踩榜 ──
+    const dislikeList    = [...all].sort((a,b) => b.dislikes - a.dislikes);
+    const dislikeTitleEl = document.getElementById('dislike-board-title');
+    const dislikeEl      = document.getElementById('dislike-leaderboard');
+    if (!dislikeEl) return;
+    const topDisliker = dislikeList.find(s => s.dislikes > 0);
+    if (dislikeTitleEl) dislikeTitleEl.innerHTML = topDisliker
+        ? `大家都雷<span class="text-stone-900 font-black"> ${topDisliker.displayName.toUpperCase()}</span>`
+        : '大家都雷…';
+    const dislikeFiltered = dislikeList.filter(s => s.dislikes > 0);
+    dislikeEl.innerHTML = dislikeFiltered.length ? dislikeFiltered.map((s,i) => {
+        const medals = ['💀','😵','😤'];
+        const isMe = s.username === currentUser?.username;
+        return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-xl transition-colors ${isMe?'bg-red-50 border border-red-100':'hover:bg-stone-50'}">
+            <div class="w-5 text-center flex-shrink-0">${medals[i]||`<span class="text-xs font-bold text-stone-400">${i+1}</span>`}</div>
+            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-stone-100 to-stone-200 flex items-center justify-center text-sm flex-shrink-0">${s.avatar}</div>
+            <div class="flex-1 min-w-0"><div class="text-xs font-semibold text-stone-800 truncate">${s.displayName}${isMe?' <span class="text-red-400">我</span>':''}</div><div class="text-xs text-stone-400">${s.books}本推荐</div></div>
+            <div class="text-xs font-bold text-red-500 flex-shrink-0">👎${s.dislikes}</div>
+        </div>`;
+    }).join('') : '<div class="text-xs text-stone-400 text-center py-3">暂无数据</div>';
+}
+
+/* ══════════════════════════════════════════
+   Export
+══════════════════════════════════════════ */
+function exportData() {
+    const blob = new Blob([JSON.stringify(store, null, 2)], { type:'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement('a'), { href: url, download: `bookshelf-${today()}.json` });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('备份文件已下载 ✓');
+}
+</script>
+</body>
+</html>
