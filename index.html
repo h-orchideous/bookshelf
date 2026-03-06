@@ -340,7 +340,7 @@
         <div class="glass-modal w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col animate-slide-in">
             <div class="flex justify-between items-center p-6 border-b border-stone-200">
                 <h2 class="text-xl font-bold text-stone-900 serif">编辑推荐书籍</h2>
-                <button id="close-edit-book-btn" class="text-stone-400 hover:text-stone-600">
+                <button type="button" id="close-edit-book-btn" class="text-stone-400 hover:text-stone-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
@@ -440,8 +440,8 @@
                 </form>
             </div>
             <div class="p-6 border-t border-stone-200 bg-stone-50 flex justify-end gap-3">
-                <button id="cancel-edit-book-btn" class="px-6 py-2 border border-stone-300 rounded-lg text-stone-700 hover:bg-stone-100 transition-colors">取消</button>
-                <button id="submit-edit-book-btn" class="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-900 transition-colors font-medium">保存更改</button>
+                <button type="button" id="cancel-edit-book-btn" class="px-6 py-2 border border-stone-300 rounded-lg text-stone-700 hover:bg-stone-100 transition-colors">取消</button>
+                <button type="button" id="submit-edit-book-btn" class="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-900 transition-colors font-medium">保存更改</button>
             </div>
         </div>
     </div>
@@ -1045,50 +1045,105 @@ function submitBook() {
    Edit book (新增功能)
 ══════════════════════════════════════════ */
 function openEditBookModal() {
+    console.log('openEditBookModal called', {currentBook, currentUser});
     if (!currentBook) {
-        showToast('未选中书籍', '#dc2626');
+        console.log('无当前书籍');
         return;
     }
-    if (!currentUser) {
-        showToast('用户未登录', '#dc2626');
+    
+    // 检查权限
+    const hasPermission = currentBook.addedBy === currentUser.username;
+    console.log('权限检查:', {addedBy: currentBook.addedBy, currentUser: currentUser.username, hasPermission});
+    if (!hasPermission) {
+        console.log('无权限编辑此书籍');
         return;
     }
-    if (currentBook.addedBy !== currentUser.username) {
-        showToast('您只能编辑自己推荐的书籍', '#dc2626');
-        return;
-    }
-    document.getElementById('edit-book-modal').classList.remove('hidden');
+    
+    const modal = document.getElementById('edit-book-modal');
+    console.log('edit-book-modal element:', modal);
+    modal.classList.remove('hidden');
 
-    document.getElementById('e-title').value       = currentBook.title       || '';
-    document.getElementById('e-author').value      = currentBook.author      || '';
-    document.getElementById('e-category').value    = currentBook.category    || '';
-    document.getElementById('e-year').value        = currentBook.year        || '';
-    document.getElementById('e-description').value = currentBook.description || '';
+    console.log('Filling form with:', {
+        title: currentBook.title,
+        author: currentBook.author,
+        category: currentBook.category,
+        year: currentBook.year,
+        description: currentBook.description,
+        type: currentBook.type,
+        access: currentBook.access
+    });
 
-    document.getElementById('e-type-offline').checked = (currentBook.type !== 'online');
-    document.getElementById('e-type-online').checked  = (currentBook.type === 'online');
+    try {
+        const titleEl = document.getElementById('e-title');
+        const authorEl = document.getElementById('e-author');
+        if (!titleEl) console.warn('找不到 e-title 元素');
+        if (!authorEl) console.warn('找不到 e-author 元素');
+        
+        titleEl && (titleEl.value = currentBook.title || '');
+        authorEl && (authorEl.value = currentBook.author || '');
+        
+        const categoryEl = document.getElementById('e-category');
+        const yearEl = document.getElementById('e-year');
+        const descEl = document.getElementById('e-description');
+        
+        categoryEl && (categoryEl.value = currentBook.category || '');
+        yearEl && (yearEl.value = currentBook.year || '');
+        descEl && (descEl.value = currentBook.description || '');
 
-    const a = currentBook.access || {};
-    if (currentBook.type === 'offline') {
-        document.getElementById('e-holder').value   = a.holder   || '';
-        document.getElementById('e-location').value = a.location || '';
-        document.getElementById('e-contact').value  = a.contact  || '';
-        document.getElementById('e-rules').value    = a.rules    || '';
-    } else {
-        document.getElementById('e-url').value      = a.url      || '';
-        document.getElementById('e-size').value     = a.size     || '';
-        document.getElementById('e-password').value = a.password || '';
-        document.getElementById('e-note').value     = a.note     || '';
-        const fmt = document.getElementById('e-format');
-        const opt = [...fmt.options].find(o => o.value === a.format);
-        if (opt) fmt.value = opt.value;
+        const offlineRadio = document.getElementById('e-type-offline');
+        const onlineRadio = document.getElementById('e-type-online');
+        
+        if (offlineRadio) offlineRadio.checked = (currentBook.type !== 'online');
+        if (onlineRadio) onlineRadio.checked = (currentBook.type === 'online');
+        
+        const a = currentBook.access || {};
+        if (currentBook.type === 'offline') {
+            const holderEl = document.getElementById('e-holder');
+            const locationEl = document.getElementById('e-location');
+            const contactEl = document.getElementById('e-contact');
+            const rulesEl = document.getElementById('e-rules');
+            
+            holderEl && (holderEl.value = a.holder || '');
+            locationEl && (locationEl.value = a.location || '');
+            contactEl && (contactEl.value = a.contact || '');
+            rulesEl && (rulesEl.value = a.rules || '');
+        } else {
+            const urlEl = document.getElementById('e-url');
+            const sizeEl = document.getElementById('e-size');
+            const passwordEl = document.getElementById('e-password');
+            const noteEl = document.getElementById('e-note');
+            const fmt = document.getElementById('e-format');
+            
+            urlEl && (urlEl.value = a.url || '');
+            sizeEl && (sizeEl.value = a.size || '');
+            passwordEl && (passwordEl.value = a.password || '');
+            noteEl && (noteEl.value = a.note || '');
+            
+            if (fmt && fmt.options) {
+                const opt = [...fmt.options].find(o => o.value === a.format);
+                if (opt) fmt.value = opt.value;
+            }
+        }
+        
+        console.log('Form values filled successfully');
+    } catch(e) {
+        console.error('填充表单时出错:', e);
     }
 
     initEditCoverColors(currentBook.cover);
     toggleEditAccessForm();
+    console.log('openEditBookModal complete');
 }
 
-function closeEditBookModal() { document.getElementById('edit-book-modal').classList.add('hidden'); }
+function closeEditBookModal() { 
+    console.log('closeEditBookModal called');
+    const modal = document.getElementById('edit-book-modal');
+    console.log('edit-book-modal element:', modal);
+    if (modal) {
+        modal.classList.add('hidden');
+        console.log('Modal hidden:', modal.classList.contains('hidden'));
+    }
+}
 
 function toggleEditAccessForm() {
 
@@ -1110,7 +1165,11 @@ function initEditCoverColors(selectedCover) {
 }
 
 function submitEditBook() {
-    if (!currentBook || currentBook.addedBy !== currentUser.username) return;
+    console.log('submitEditBook called', currentBook, currentUser);
+    if (!currentBook || currentBook.addedBy !== currentUser.username) {
+        console.log('权限检查失败或无当前书籍');
+        return;
+    }
 
     // 全部用 id 直接读取，零依赖 FormData 和 name 属性
     const title  = document.getElementById('e-title').value.trim();
@@ -1138,10 +1197,11 @@ function submitEditBook() {
     } else {
         const url = document.getElementById('e-url').value.trim();
         if (!url) { showToast('请填写资源链接', '#dc2626'); return; }
+        const fmtEl = document.getElementById('e-format');
         access = {
             type:     'online',
             url,
-            format:   document.getElementById('e-format').value,
+            format:   fmtEl ? fmtEl.value : 'PDF',
             size:     document.getElementById('e-size').value.trim(),
             password: document.getElementById('e-password').value.trim(),
             note:     document.getElementById('e-note').value.trim()
