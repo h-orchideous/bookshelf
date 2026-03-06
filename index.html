@@ -332,7 +332,7 @@
 </div>
 
 <!-- ══════════════════════════════════════════
-     EDIT BOOK MODAL (修复版)
+     EDIT BOOK MODAL (修复版 - 保留原有信息)
 ══════════════════════════════════════════ -->
 <div id="edit-book-modal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="edit-book-overlay"></div>
@@ -1042,7 +1042,7 @@ function submitBook() {
 }
 
 /* ══════════════════════════════════════════
-   Edit book (修复版)
+   Edit book (修复版 - 保留原有信息)
 ══════════════════════════════════════════ */
 function openEditBookModal() {
     if (!currentBook || currentBook.addedBy !== currentUser.username) return;
@@ -1146,12 +1146,23 @@ function submitEditBook() {
         };
     }
 
-    // 更新书籍数据
+    // 找到书籍在 store 中的索引
     const bookIndex = store.books.findIndex(b => b.id === currentBook.id);
     if (bookIndex === -1) { showToast('书籍数据异常', '#dc2626'); return; }
 
+    // 保留原有信息，只更新修改的字段
     store.books[bookIndex] = {
-        ...store.books[bookIndex],
+        // 保留原有字段
+        id: store.books[bookIndex].id,
+        readers: store.books[bookIndex].readers || [],
+        recommendations: store.books[bookIndex].recommendations || [],
+        addedBy: store.books[bookIndex].addedBy,
+        addedByName: store.books[bookIndex].addedByName,
+        addedAt: store.books[bookIndex].addedAt,
+        status: store.books[bookIndex].status,
+        currentBorrower: store.books[bookIndex].currentBorrower,
+        borrowedAt: store.books[bookIndex].borrowedAt,
+        // 更新字段
         title,
         author,
         category: document.getElementById('edit-category').value.trim() || '未分类',
