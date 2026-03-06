@@ -372,7 +372,7 @@
                         <label class="block text-sm font-medium text-stone-700 mb-3">获取方式 <span class="text-red-500">*</span></label>
                         <div class="flex gap-4">
                             <label class="flex-1 cursor-pointer">
-                                <input id="e-type-offline" type="radio" name="type" value="offline" checked class="sr-only peer">
+                                <input id="e-type-offline" type="radio" name="etype" value="offline" checked class="sr-only peer">
                                 <div class="p-4 rounded-lg border-2 border-stone-200 peer-checked:border-amber-500 peer-checked:bg-amber-50 transition-all text-center">
                                     <div class="text-2xl mb-1">📖</div>
                                     <div class="font-medium text-stone-900">实体书</div>
@@ -380,7 +380,7 @@
                                 </div>
                             </label>
                             <label class="flex-1 cursor-pointer">
-                                <input id="e-type-online" type="radio" name="type" value="online" class="sr-only peer">
+                                <input id="e-type-online" type="radio" name="etype" value="online" class="sr-only peer">
                                 <div class="p-4 rounded-lg border-2 border-stone-200 peer-checked:border-amber-500 peer-checked:bg-amber-50 transition-all text-center">
                                     <div class="text-2xl mb-1">💻</div>
                                     <div class="font-medium text-stone-900">线上资源</div>
@@ -741,7 +741,7 @@ function bindStaticEvents() {
     document.getElementById('close-edit-book-btn').addEventListener('click', closeEditBookModal);
     document.getElementById('cancel-edit-book-btn').addEventListener('click', closeEditBookModal);
     document.getElementById('submit-edit-book-btn').addEventListener('click', submitEditBook);
-    document.querySelectorAll('input[name="e-type"]').forEach(r =>
+    document.querySelectorAll('#edit-book-form input[name="etype"]').forEach(r =>
         r.addEventListener('change', toggleEditAccessForm));
 
     // Book modal
@@ -1048,7 +1048,6 @@ function openEditBookModal() {
     if (!currentBook || currentBook.addedBy !== currentUser.username) return;
     document.getElementById('edit-book-modal').classList.remove('hidden');
 
-    // 用唯一 id 直接赋值，不用 reset()（reset 有异步覆盖风险），不用 querySelector（有跨表单 name 冲突）
     document.getElementById('e-title').value       = currentBook.title       || '';
     document.getElementById('e-author').value      = currentBook.author      || '';
     document.getElementById('e-category').value    = currentBook.category    || '';
@@ -1070,8 +1069,8 @@ function openEditBookModal() {
         document.getElementById('e-password').value = a.password || '';
         document.getElementById('e-note').value     = a.note     || '';
         const fmt = document.getElementById('e-format');
-        const match = [...fmt.options].find(o => o.value === a.format);
-        if (match) fmt.value = match.value;
+        const opt = [...fmt.options].find(o => o.value === a.format);
+        if (opt) fmt.value = opt.value;
     }
 
     initEditCoverColors(currentBook.cover);
@@ -1479,7 +1478,8 @@ function renderLeaderboards() {
     dislikeEl.innerHTML = dislikeFiltered.length ? dislikeFiltered.map((s,i) => {
         const medals = ['💀','😵','😤'];
         const isMe = s.username === currentUser?.username;
-        return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-xl transition-colors ${isMe?'bg-red-50 border border-red-100':'hover:bg-stone-50'}">
+        return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-xl transition-colors ${isMe?'bg-red-50 border border-red-100':'hover:bg-stone-50'}">  
+return '<div class=“flex items-center gap-2 px-2 py-1.5 rounded-xl transition-colors ${isMe？'bg-red-50 border border-red-100'：'hover：bg-stone-50'}“>
             <div class="w-5 text-center flex-shrink-0">${medals[i]||`<span class="text-xs font-bold text-stone-400">${i+1}</span>`}</div>
             <div class="w-7 h-7 rounded-full bg-gradient-to-br from-stone-100 to-stone-200 flex items-center justify-center text-sm flex-shrink-0">${s.avatar}</div>
             <div class="flex-1 min-w-0"><div class="text-xs font-semibold text-stone-800 truncate">${s.displayName}${isMe?' <span class="text-red-400">我</span>':''}</div><div class="text-xs text-stone-400">${s.books}本推荐</div></div>
