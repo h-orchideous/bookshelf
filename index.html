@@ -42,6 +42,8 @@
             z-index:200; display:flex; align-items:center; gap:8px; font-size:13px; color:#374151; }
         .save-dot { width:8px; height:8px; border-radius:50%; background:#10b981; animation:pulse 2s infinite; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+        /* 修复：确保编辑模态框在最高层 */
+        #edit-book-modal { z-index: 100; }
     </style>
 </head>
 <body class="min-h-screen text-stone-800">
@@ -60,7 +62,6 @@
 ══════════════════════════════════════════ -->
 <div id="login-modal" class="fixed inset-0 z-50 flex items-center justify-center login-bg">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 m-4 animate-slide-in">
-
         <div class="text-center mb-7">
             <div class="w-16 h-16 bg-gradient-to-br from-amber-600 to-amber-800 rounded-full flex items-center justify-center text-white mx-auto mb-4 shadow-lg">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,7 +73,6 @@
             <p class="text-stone-500 mt-1 text-sm">选择你的身份，或添加新用户</p>
         </div>
 
-        <!-- 用户选择面板 -->
         <div id="user-pick-panel">
             <div class="flex items-center justify-between mb-3">
                 <span class="text-xs font-semibold text-stone-400 uppercase tracking-wider">选择身份</span>
@@ -85,7 +85,6 @@
             </button>
         </div>
 
-        <!-- 添加新用户面板 -->
         <div id="add-user-panel" class="hidden space-y-4">
             <div class="flex items-center gap-3 mb-1">
                 <button id="back-btn" class="text-stone-400 hover:text-stone-700 transition-colors">
@@ -190,9 +189,8 @@
             <button id="empty-add-btn" class="bg-amber-700 text-white px-6 py-2 rounded-lg hover:bg-amber-800 transition-colors">推荐第一本书</button>
         </div>
         <div id="bookshelf" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
-        </div><!-- /left -->
+        </div>
 
-        <!-- 右侧双榜单 -->
         <aside class="hidden lg:block w-64 flex-shrink-0 space-y-4">
             <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden sticky top-24">
                 <div class="px-4 py-3 border-b border-stone-100">
@@ -211,7 +209,7 @@
                 </div>
             </div>
         </aside>
-        </div><!-- /flex -->
+        </div>
     </main>
 </div>
 
@@ -220,8 +218,8 @@
 ══════════════════════════════════════════ -->
 <div id="add-book-modal" class="fixed inset-0 z-[60] hidden">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="add-book-overlay"></div>
-    <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="glass-modal w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-slide-in">
+    <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+        <div class="glass-modal w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col pointer-events-auto animate-slide-in">
             <div class="flex justify-between items-center p-6 border-b border-stone-200">
                 <h2 class="text-xl font-bold text-stone-900 serif">推荐新书籍</h2>
                 <button id="close-add-book-btn" class="text-stone-400 hover:text-stone-600">
@@ -332,47 +330,48 @@
 </div>
 
 <!-- ══════════════════════════════════════════
-     EDIT BOOK MODAL (新增)
+     EDIT BOOK MODAL (修复版：确保顶部弹出 & 可靠保存)
 ══════════════════════════════════════════ -->
-<div id="edit-book-modal" class="fixed inset-0 z-50 hidden">
+<div id="edit-book-modal" class="fixed inset-0 z-[100] hidden">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="edit-book-overlay"></div>
-    <div class="absolute inset-0 flex items-start justify-center pt-20 p-4">
-        <div class="glass-modal w-full max-w-2xl max-h-[80vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-slide-in">
-            <div class="flex justify-between items-center p-6 border-b border-stone-200">
+    <!-- 关键修复：items-start + pt-20 确保从顶部开始，max-h 控制高度，overflow-y-auto 确保可滚动 -->
+    <div class="absolute inset-0 flex items-start justify-center pt-16 pb-8 px-4 overflow-y-auto pointer-events-none">
+        <div class="glass-modal w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col pointer-events-auto animate-slide-in relative">
+            <div class="flex justify-between items-center p-6 border-b border-stone-200 bg-white/80">
                 <h2 class="text-xl font-bold text-stone-900 serif">编辑推荐书籍</h2>
-                <button type="button" id="close-edit-book-btn" class="text-stone-400 hover:text-stone-600">
+                <button type="button" id="close-edit-book-btn" class="text-stone-400 hover:text-stone-600 p-1 rounded-full hover:bg-stone-100 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
-            <div class="flex-1 overflow-y-auto p-6">
-                <form id="edit-book-form" class="space-y-6">
+            <div class="flex-1 overflow-y-auto p-6 max-h-[70vh]">
+                <form id="edit-book-form" class="space-y-6" onsubmit="event.preventDefault();">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-stone-700 mb-1">书名 <span class="text-red-500">*</span></label>
-                            <input id="e-title" type="text" name="title" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="输入书名">
+                            <input id="e-title" type="text" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="输入书名">
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-stone-700 mb-1">作者 <span class="text-red-500">*</span></label>
-                            <input id="e-author" type="text" name="author" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="输入作者姓名">
+                            <input id="e-author" type="text" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="输入作者姓名">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">分类</label>
-                            <input id="e-category" type="text" name="category" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：技术/文学/历史">
+                            <input id="e-category" type="text" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：技术/文学/历史">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">出版年份</label>
-                            <input id="e-year" type="text" name="year" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：2023">
+                            <input id="e-year" type="text" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：2023">
                         </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-stone-700 mb-1">书籍简介</label>
-                        <textarea id="e-description" name="description" rows="3" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none resize-none" placeholder="简要介绍这本书的内容..."></textarea>
+                        <textarea id="e-description" rows="3" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none resize-none" placeholder="简要介绍这本书的内容..."></textarea>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-stone-700 mb-3">获取方式 <span class="text-red-500">*</span></label>
                         <div class="flex gap-4">
                             <label class="flex-1 cursor-pointer">
-                                <input id="e-type-offline" type="radio" name="etype" value="offline" checked class="sr-only peer">
+                                <input id="e-type-offline" type="radio" name="etype" value="offline" class="sr-only peer">
                                 <div class="p-4 rounded-lg border-2 border-stone-200 peer-checked:border-amber-500 peer-checked:bg-amber-50 transition-all text-center">
                                     <div class="text-2xl mb-1">📖</div>
                                     <div class="font-medium text-stone-900">实体书</div>
@@ -392,45 +391,45 @@
                     <div id="edit-offline-form" class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">当前持有者 <span class="text-red-500">*</span></label>
-                            <input id="e-holder" type="text" name="holder" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="姓名或联系方式">
+                            <input id="e-holder" type="text" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="姓名或联系方式">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">存放位置 <span class="text-red-500">*</span></label>
-                            <input id="e-location" type="text" name="location" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：办公室A-302">
+                            <input id="e-location" type="text" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：办公室A-302">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">联系方式</label>
-                            <input id="e-contact" type="text" name="contact" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="邮箱或手机号">
+                            <input id="e-contact" type="text" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="邮箱或手机号">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">借阅规则</label>
-                            <input id="e-rules" type="text" name="rules" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：请在一周内归还">
+                            <input id="e-rules" type="text" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：请在一周内归还">
                         </div>
                     </div>
                     <div id="edit-online-form" class="space-y-4 hidden">
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">资源链接 <span class="text-red-500">*</span></label>
-                            <input id="e-url" type="url" name="url" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="https://...">
+                            <input id="e-url" type="url" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="https://...">
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-stone-700 mb-1">格式</label>
-                                <select id="e-format" name="format" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none">
+                                <select id="e-format" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none">
                                     <option>PDF</option><option>EPUB</option><option>MOBI</option><option>网页</option><option>其他</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-stone-700 mb-1">文件大小</label>
-                                <input id="e-size" type="text" name="size" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：2.4MB">
+                                <input id="e-size" type="text" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：2.4MB">
                             </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">访问密码（如有）</label>
-                            <input id="e-password" type="text" name="password" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="留空表示无需密码">
+                            <input id="e-password" type="text" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="留空表示无需密码">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">备注说明</label>
-                            <input id="e-note" type="text" name="note" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：需要内网访问权限">
+                            <input id="e-note" type="text" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="如：需要内网访问权限">
                         </div>
                     </div>
                     <div>
@@ -441,7 +440,7 @@
             </div>
             <div class="p-6 border-t border-stone-200 bg-stone-50 flex justify-end gap-3">
                 <button type="button" id="cancel-edit-book-btn" class="px-6 py-2 border border-stone-300 rounded-lg text-stone-700 hover:bg-stone-100 transition-colors">取消</button>
-                <button type="button" id="submit-edit-book-btn" class="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-900 transition-colors font-medium">保存更改</button>
+                <button type="button" id="submit-edit-book-btn" class="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-900 transition-colors font-medium shadow-lg">保存更改</button>
             </div>
         </div>
     </div>
@@ -452,8 +451,8 @@
 ══════════════════════════════════════════ -->
 <div id="book-modal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="book-modal-overlay"></div>
-    <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="glass-modal w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-slide-in">
+    <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+        <div class="glass-modal w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row pointer-events-auto animate-slide-in">
             <div class="md:w-1/3 bg-gradient-to-b from-stone-100 to-stone-50 p-6 flex flex-col items-center border-r border-stone-200">
                 <div id="modal-cover" class="w-40 h-56 rounded-lg shadow-2xl mb-4 transform hover:scale-105 transition-transform duration-300 flex items-center justify-center text-white text-center p-4"></div>
                 <div class="text-center w-full">
@@ -528,16 +527,11 @@
 'use strict';
 
 /* ══════════════════════════════════════════
-   ⚙️  配置区 — 部署前填入你的 JSONbin 信息
-   按照底部说明文档获取这两个值
+   配置 & 数据层
 ══════════════════════════════════════════ */
-const JSONBIN_BIN_ID  = '69a93d93ae596e708f614d79';   // 例：'6623a1f7acd3cb34a8398abc'
-const JSONBIN_API_KEY = '$2a$10$uKFcEoyvbyK3SF3lxrKfyuibP5PTEgFcCioxGP4mAGUny4bTnKoI6';   // 例：'$2a$10$xxxxxxxxxxxxxxxxxxxx'
+const JSONBIN_BIN_ID  = '69a93d93ae596e708f614d79';
+const JSONBIN_API_KEY = '$2a$10$uKFcEoyvbyK3SF3lxrKfyuibP5PTEgFcCioxGP4mAGUny4bTnKoI6';
 
-/* ══════════════════════════════════════════
-   数据层 — JSONbin.io 云存储
-   回退：若未配置则使用 localStorage（单机模式）
-══════════════════════════════════════════ */
 const LS_KEY  = 'bookshelf_v1';
 const LS_SESS = 'bookshelf_session';
 const USE_CLOUD = !!(JSONBIN_BIN_ID && JSONBIN_API_KEY);
@@ -545,15 +539,11 @@ const USE_CLOUD = !!(JSONBIN_BIN_ID && JSONBIN_API_KEY);
 async function fetchStore() {
     if (USE_CLOUD) {
         try {
-            const r = await fetch(
-                `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`,
-                { headers: { 'X-Master-Key': JSONBIN_API_KEY } }
-            );
-            if (r.ok) {
-                const j = await r.json();
-                return j.record;
-            }
-        } catch(e) { console.warn('JSONbin 读取失败，使用本地缓存', e); }
+            const r = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                headers: { 'X-Master-Key': JSONBIN_API_KEY }
+            });
+            if (r.ok) return (await r.json()).record;
+        } catch(e) { console.warn('JSONbin 读取失败', e); }
     }
     try {
         const raw = localStorage.getItem(LS_KEY);
@@ -563,22 +553,14 @@ async function fetchStore() {
 }
 
 async function saveStore() {
-    // 本地缓存先写
     try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch(e) {}
-
     if (USE_CLOUD) {
         try {
-            const r = await fetch(
-                `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`,
-                {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_API_KEY
-                    },
-                    body: JSON.stringify(store)
-                }
-            );
+            const r = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
+                body: JSON.stringify(store)
+            });
             if (r.ok) { flashSaved('☁️ 已同步'); return; }
         } catch(e) { console.warn('JSONbin 保存失败', e); }
         flashSaved('⚠️ 同步失败（已保存本地）');
@@ -587,27 +569,8 @@ async function saveStore() {
     }
 }
 
-// 每8秒拉取一次最新数据
-let _syncTimer = null;
-function startAutoSync() {
-    if (!USE_CLOUD) return;
-    _syncTimer = setInterval(async () => {
-        try {
-            const fresh = await fetchStore();
-            if (JSON.stringify(fresh) !== JSON.stringify(store)) {
-                store = fresh;
-                if (!document.getElementById('login-modal').classList.contains('hidden')) {
-                    renderUserGrid();
-                } else {
-                    renderBooks();
-                }
-            }
-        } catch(e) {}
-    }, 8000);
-}
-
 /* ══════════════════════════════════════════
-   App state
+   State
 ══════════════════════════════════════════ */
 let store = { users: [], books: [], notes: {} };
 let currentUser = null;
@@ -615,11 +578,10 @@ let currentBook = null;
 let currentFilter = 'all';
 let editModeOn = false;
 let selectedAvatar = '🐼';
-
 const AVATARS = ['🐼','🦊','🐯','🦁','🐸','🐙','🦄','🐺','🦋','🐻','🐧','🦉','🐨','🦝','🐬','🦔'];
 
 /* ══════════════════════════════════════════
-   UI helpers
+   UI Helpers
 ══════════════════════════════════════════ */
 let _saveTimer, _toastTimer;
 function flashSaved(msg = '✓ 已保存') {
@@ -645,11 +607,8 @@ function today() { return new Date().toISOString().split('T')[0]; }
    Boot
 ══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async () => {
-    document.getElementById('login-modal').classList.add('hidden');
     showLoading(true);
-
     store = await fetchStore();
-
     initCoverColors();
     bindStaticEvents();
     startAutoSync();
@@ -673,47 +632,40 @@ function showLoading(on) {
         el = document.createElement('div');
         el.id = '_loading';
         el.className = 'fixed inset-0 z-[999] flex items-center justify-center login-bg';
-        el.innerHTML = `<div class="text-white text-center">
-            <div class="text-5xl mb-4 animate-bounce">📚</div>
-            <div class="text-lg font-medium">正在连接书架...</div>
-        </div>`;
+        el.innerHTML = `<div class="text-white text-center"><div class="text-5xl mb-4 animate-bounce">📚</div><div class="text-lg font-medium">正在连接书架...</div></div>`;
         document.body.appendChild(el);
     }
     el.style.display = on ? 'flex' : 'none';
 }
 
 /* ══════════════════════════════════════════
-   Bind all events statically (no inline onclick)
+   Event Binding
 ══════════════════════════════════════════ */
 function bindStaticEvents() {
-    // Login panel
-    document.getElementById('edit-btn').addEventListener('click', toggleEditMode);
-    document.getElementById('add-user-btn').addEventListener('click', showAddUserPanel);
-    document.getElementById('back-btn').addEventListener('click', showUserPickPanel);
-    document.getElementById('confirm-add-btn').addEventListener('click', handleAddUser);
-    document.getElementById('new-user-name').addEventListener('keydown', e => { if (e.key === 'Enter') handleAddUser(); });
-
-    // User grid delegation
-    document.getElementById('user-grid').addEventListener('click', e => {
+    // Login
+    document.getElementById('edit-btn')?.addEventListener('click', toggleEditMode);
+    document.getElementById('add-user-btn')?.addEventListener('click', showAddUserPanel);
+    document.getElementById('back-btn')?.addEventListener('click', showUserPickPanel);
+    document.getElementById('confirm-add-btn')?.addEventListener('click', handleAddUser);
+    document.getElementById('new-user-name')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleAddUser(); });
+    document.getElementById('user-grid')?.addEventListener('click', e => {
         const card = e.target.closest('[data-username]');
         if (!card) return;
         const username = card.dataset.username;
-        if (card.dataset.action === 'delete') { deleteUser(username); return; }
-        if (!editModeOn) loginAs(username);
+        if (card.dataset.action === 'delete') deleteUser(username);
+        else if (!editModeOn) loginAs(username);
     });
 
-    // Main app
-    document.getElementById('logout-btn').addEventListener('click', logout);
-    document.getElementById('export-btn').addEventListener('click', exportData);
-    document.getElementById('add-book-btn').addEventListener('click', openAddBookModal);
-    document.getElementById('empty-add-btn').addEventListener('click', openAddBookModal);
-    document.getElementById('search-input').addEventListener('input', e => {
+    // Main App
+    document.getElementById('logout-btn')?.addEventListener('click', logout);
+    document.getElementById('export-btn')?.addEventListener('click', exportData);
+    document.getElementById('add-book-btn')?.addEventListener('click', openAddBookModal);
+    document.getElementById('empty-add-btn')?.addEventListener('click', openAddBookModal);
+    document.getElementById('search-input')?.addEventListener('input', e => {
         const t = e.target.value.toLowerCase();
-        renderBooks(store.books.filter(b =>
-            b.title.toLowerCase().includes(t) || b.author.toLowerCase().includes(t)));
+        renderBooks(store.books.filter(b => b.title.toLowerCase().includes(t) || b.author.toLowerCase().includes(t)));
     });
 
-    // Filter buttons
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             currentFilter = btn.dataset.filter;
@@ -728,39 +680,28 @@ function bindStaticEvents() {
         });
     });
 
-    // Add book modal
-    document.getElementById('add-book-overlay').addEventListener('click', closeAddBookModal);
-    document.getElementById('close-add-book-btn').addEventListener('click', closeAddBookModal);
-    document.getElementById('cancel-add-book-btn').addEventListener('click', closeAddBookModal);
-    document.getElementById('submit-book-btn').addEventListener('click', submitBook);
-    document.querySelectorAll('input[name="type"]').forEach(r =>
-        r.addEventListener('change', toggleAccessForm));
+    // Add Book Modal
+    document.getElementById('add-book-overlay')?.addEventListener('click', closeAddBookModal);
+    document.getElementById('close-add-book-btn')?.addEventListener('click', closeAddBookModal);
+    document.getElementById('cancel-add-book-btn')?.addEventListener('click', closeAddBookModal);
+    document.getElementById('submit-book-btn')?.addEventListener('click', submitBook);
+    document.querySelectorAll('input[name="type"]').forEach(r => r.addEventListener('change', toggleAccessForm));
 
-    // Edit book modal (新增)
-    const editOverlay = document.getElementById('edit-book-overlay');
-    const closeBtn = document.getElementById('close-edit-book-btn');
-    const cancelBtn = document.getElementById('cancel-edit-book-btn');
-    const submitBtn = document.getElementById('submit-edit-book-btn');
-    
-    console.log('编辑模态框元素:', {editOverlay, closeBtn, cancelBtn, submitBtn});
-    
-    if (editOverlay) editOverlay.addEventListener('click', closeEditBookModal);
-    if (closeBtn) closeBtn.addEventListener('click', closeEditBookModal);
-    if (cancelBtn) cancelBtn.addEventListener('click', closeEditBookModal);
-    if (submitBtn) submitBtn.addEventListener('click', submitEditBook);
-    
-    document.querySelectorAll('#edit-book-form input[name="etype"]').forEach(r =>
-        r.addEventListener('change', toggleEditAccessForm));
+    // Edit Book Modal (关键修复)
+    document.getElementById('edit-book-overlay')?.addEventListener('click', closeEditBookModal);
+    document.getElementById('close-edit-book-btn')?.addEventListener('click', closeEditBookModal);
+    document.getElementById('cancel-edit-book-btn')?.addEventListener('click', closeEditBookModal);
+    document.getElementById('submit-edit-book-btn')?.addEventListener('click', submitEditBook);
+    document.querySelectorAll('input[name="etype"]').forEach(r => r.addEventListener('change', toggleEditAccessForm));
 
-    // Book modal
-    document.getElementById('book-modal-overlay').addEventListener('click', closeBookModal);
-    document.getElementById('edit-book-btn').addEventListener('click', openEditBookModal);
-    document.getElementById('delete-book-btn').addEventListener('click', deleteCurrentBook);
-    document.getElementById('like-btn').addEventListener('click', () => rateRecommendation('like'));
-    document.getElementById('dislike-btn').addEventListener('click', () => rateRecommendation('dislike'));
-    document.getElementById('add-note-btn').addEventListener('click', addNote);
+    // Book Detail Modal
+    document.getElementById('book-modal-overlay')?.addEventListener('click', closeBookModal);
+    document.getElementById('edit-book-btn')?.addEventListener('click', openEditBookModal);
+    document.getElementById('delete-book-btn')?.addEventListener('click', deleteCurrentBook);
+    document.getElementById('like-btn')?.addEventListener('click', () => rateRecommendation('like'));
+    document.getElementById('dislike-btn')?.addEventListener('click', () => rateRecommendation('dislike'));
+    document.getElementById('add-note-btn')?.addEventListener('click', addNote);
 
-    // Tab buttons
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
@@ -775,7 +716,7 @@ function bindStaticEvents() {
 }
 
 /* ══════════════════════════════════════════
-   Auth / User management
+   User Management
 ══════════════════════════════════════════ */
 function showLoginModal() {
     editModeOn = false;
@@ -803,29 +744,19 @@ function renderUserGrid() {
     const grid = document.getElementById('user-grid');
     const editBtn = document.getElementById('edit-btn');
     editBtn.textContent = editModeOn ? '完成' : '管理';
-
     if (!store.users.length) {
         editModeOn = false;
         grid.innerHTML = `<div class="col-span-3 text-center text-stone-400 text-sm py-4">还没有用户，先添加一个吧</div>`;
         return;
     }
-
     grid.innerHTML = store.users.map(u => `
         <div class="relative">
             <button data-username="${u.username}" data-action="login"
-                class="w-full flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all
-                    ${editModeOn
-                        ? 'border-red-200 bg-red-50 shake-card cursor-default'
-                        : 'border-stone-100 hover:border-amber-400 hover:bg-amber-50 cursor-pointer'}">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-2xl shadow-sm">
-                    ${u.avatar}
-                </div>
+                class="w-full flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${editModeOn ? 'border-red-200 bg-red-50 shake-card cursor-default' : 'border-stone-100 hover:border-amber-400 hover:bg-amber-50 cursor-pointer'}">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-2xl shadow-sm">${u.avatar}</div>
                 <span class="text-xs font-medium text-stone-700 truncate w-full text-center">${u.displayName}</span>
             </button>
-            ${editModeOn
-                ? `<button data-username="${u.username}" data-action="delete"
-                        class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md z-10 text-xs font-bold leading-none">✕</button>`
-                : ''}
+            ${editModeOn ? `<button data-username="${u.username}" data-action="delete" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md z-10 text-xs font-bold leading-none">✕</button>` : ''}
         </div>`).join('');
 }
 
@@ -838,7 +769,7 @@ function loginAs(username) {
     const user = store.users.find(u => u.username === username);
     if (!user) return;
     currentUser = { username: user.username, displayName: user.displayName, avatar: user.avatar };
-    localStorage.setItem('bookshelf_session', username);
+    localStorage.setItem(LS_SESS, username);
     showMainApp();
     showToast(`欢迎，${user.displayName} 👋`);
 }
@@ -847,17 +778,14 @@ function handleAddUser() {
     const name = document.getElementById('new-user-name').value.trim();
     const errEl = document.getElementById('add-user-error');
     if (!name) { errEl.textContent = '请输入你的名字'; errEl.classList.remove('hidden'); return; }
-
     let username = name;
     let n = 2;
     while (store.users.find(u => u.username === username)) username = name + (n++);
-
     const newUser = { username, displayName: name, avatar: selectedAvatar, createdAt: new Date().toISOString() };
     store.users.push(newUser);
     saveStore();
-
     currentUser = { username, displayName: name, avatar: selectedAvatar };
-    localStorage.setItem('bookshelf_session', username);
+    localStorage.setItem(LS_SESS, username);
     showMainApp();
     showToast('欢迎加入书架 📚');
 }
@@ -865,7 +793,7 @@ function handleAddUser() {
 function deleteUser(username) {
     const user = store.users.find(u => u.username === username);
     if (!user) return;
-    if (!confirm(`确定要删除用户「${user.displayName}」吗？\n该用户添加的书籍和备注不会被删除。`)) return;
+    if (!confirm(`确定要删除用户「${user.displayName}」吗？`)) return;
     store.users = store.users.filter(u => u.username !== username);
     saveStore();
     if (!store.users.length) editModeOn = false;
@@ -874,7 +802,7 @@ function deleteUser(username) {
 }
 
 function logout() {
-    localStorage.removeItem('bookshelf_session');
+    localStorage.removeItem(LS_SESS);
     currentUser = null;
     currentBook = null;
     currentFilter = 'all';
@@ -890,18 +818,10 @@ function showMainApp() {
     renderLeaderboards();
 }
 
-/* ══════════════════════════════════════════
-   Avatar picker
-══════════════════════════════════════════ */
 function initAvatarPicker() {
     selectedAvatar = AVATARS[0];
     document.getElementById('avatar-picker').innerHTML = AVATARS.map((a, i) => `
-        <button type="button" data-emoji="${a}"
-            class="avatar-opt w-10 h-10 rounded-full flex items-center justify-center text-xl border-2 transition-all hover:scale-110
-                   ${i === 0 ? 'border-amber-500 bg-amber-50 scale-110' : 'border-transparent bg-stone-100'}">
-            ${a}
-        </button>`).join('');
-
+        <button type="button" data-emoji="${a}" class="avatar-opt w-10 h-10 rounded-full flex items-center justify-center text-xl border-2 transition-all hover:scale-110 ${i === 0 ? 'border-amber-500 bg-amber-50 scale-110' : 'border-transparent bg-stone-100'}">${a}</button>`).join('');
     document.getElementById('avatar-picker').addEventListener('click', e => {
         const btn = e.target.closest('.avatar-opt');
         if (!btn) return;
@@ -917,11 +837,10 @@ function initAvatarPicker() {
     }, { once: false });
 }
 
-/* ══════════════════════════════════════════
-   Cover colors
-══════════════════════════════════════════ */
 function initCoverColors() {
-    document.getElementById('cover-colors').innerHTML = [1,2,3,4,5,6,7,8].map(i => `
+    const container = document.getElementById('cover-colors');
+    if (!container) return;
+    container.innerHTML = [1,2,3,4,5,6,7,8].map(i => `
         <label class="cursor-pointer">
             <input type="radio" name="cover" value="book-cover-gradient-${i}" ${i===1?'checked':''} class="sr-only peer">
             <div class="w-12 h-12 rounded-lg book-cover-gradient-${i} peer-checked:ring-4 peer-checked:ring-amber-500 peer-checked:ring-offset-2 transition-all hover:scale-110"></div>
@@ -929,20 +848,19 @@ function initCoverColors() {
 }
 
 /* ══════════════════════════════════════════
-   Render books
+   Book Rendering
 ══════════════════════════════════════════ */
 function renderBooks(books = store.books) {
     const shelf = document.getElementById('bookshelf');
     const empty = document.getElementById('empty-state');
     shelf.innerHTML = '';
-
     let list = books;
     if      (currentFilter === 'my-books')  list = books.filter(b => b.addedBy === currentUser.username);
     else if (currentFilter === 'available') list = books.filter(b => b.status === 'available');
     else if (currentFilter === 'borrowed')  list = books.filter(b => b.status === 'borrowed');
     else if (currentFilter === 'online')    list = books.filter(b => b.type === 'online');
     else if (currentFilter === 'offline')   list = books.filter(b => b.type === 'offline');
-
+    
     document.getElementById('total-books').textContent = `${list.length} 本书在架`;
     empty.classList.toggle('hidden', list.length > 0);
     if (!list.length) return;
@@ -951,8 +869,11 @@ function renderBooks(books = store.books) {
         const card = document.createElement('div');
         card.className = 'book-spine cursor-pointer animate-fade-in';
         card.style.animationDelay = `${i * 0.04}s`;
-
         const borrowed = book.status === 'borrowed';
+        const recs = book.recommendations || [];
+        const likes = recs.filter(r => r.action === 'like').length;
+        const dislikes = recs.filter(r => r.action === 'dislike').length;
+        
         card.innerHTML = `
             <div class="relative bg-white rounded-lg shadow-md overflow-hidden border border-stone-200 h-full flex flex-col">
                 <div class="h-48 ${book.cover} relative flex items-center justify-center p-4">
@@ -976,12 +897,11 @@ function renderBooks(books = store.books) {
                     <div class="flex items-center justify-between text-xs text-stone-400 pt-2 border-t border-stone-100">
                         <span>${book.readers?.length || 0} 人读过</span>
                         <span class="flex items-center gap-1.5">
-                            ${(() => { const recs=book.recommendations||[],l=recs.filter(r=>r.action==='like').length,d=recs.filter(r=>r.action==='dislike').length; return recs.length?`<span class="text-green-500">👍${l}</span><span class="text-red-400">👎${d}</span>`:`<span>${book.type==='online'?'线上':'实体'}</span>`; })()}
+                            ${recs.length ? `<span class="text-green-500">👍${likes}</span><span class="text-red-400">👎${dislikes}</span>` : `<span>${book.type==='online'?'线上':'实体'}</span>`}
                         </span>
                     </div>
                 </div>
             </div>`;
-
         card.addEventListener('click', () => openBookModal(book));
         shelf.appendChild(card);
     });
@@ -989,7 +909,7 @@ function renderBooks(books = store.books) {
 }
 
 /* ══════════════════════════════════════════
-   Add book
+   Add Book
 ══════════════════════════════════════════ */
 function openAddBookModal() {
     document.getElementById('add-book-modal').classList.remove('hidden');
@@ -997,7 +917,10 @@ function openAddBookModal() {
     toggleAccessForm();
     initCoverColors();
 }
-function closeAddBookModal() { document.getElementById('add-book-modal').classList.add('hidden'); }
+
+function closeAddBookModal() { 
+    document.getElementById('add-book-modal').classList.add('hidden'); 
+}
 
 function toggleAccessForm() {
     const type = document.querySelector('input[name="type"]:checked')?.value || 'offline';
@@ -1010,7 +933,6 @@ function submitBook() {
     const title = fd.get('title')?.trim();
     const author = fd.get('author')?.trim();
     if (!title || !author) { showToast('请填写书名和作者', '#dc2626'); return; }
-
     const type = fd.get('type');
     let access;
     if (type === 'offline') {
@@ -1023,25 +945,15 @@ function submitBook() {
         if (!url) { showToast('请填写资源链接', '#dc2626'); return; }
         access = { type:'online', url, format: fd.get('format')||'PDF', size: fd.get('size')||'', password: fd.get('password')||'', note: fd.get('note')||'' };
     }
-
     const book = {
-        id: Date.now(),
-        title, author,
-        category: fd.get('category') || '未分类',
-        year: fd.get('year') || '',
-        cover: fd.get('cover') || 'book-cover-gradient-1',
-        type, access,
-        status: 'available',
-        currentBorrower: null,
-        borrowedAt: null,
-        description: fd.get('description') || '',
-        readers: [],
-        addedBy: currentUser.username,
-        addedByName: currentUser.displayName,
-        addedAt: today(),
-        recommendations: [] // 新增：推荐评价数组
+        id: Date.now(), title, author,
+        category: fd.get('category') || '未分类', year: fd.get('year') || '',
+        cover: fd.get('cover') || 'book-cover-gradient-1', type, access,
+        status: 'available', currentBorrower: null, borrowedAt: null,
+        description: fd.get('description') || '', readers: [],
+        addedBy: currentUser.username, addedByName: currentUser.displayName,
+        addedAt: today(), recommendations: []
     };
-
     store.books.push(book);
     saveStore();
     closeAddBookModal();
@@ -1050,118 +962,63 @@ function submitBook() {
 }
 
 /* ══════════════════════════════════════════
-   Edit book (新增功能)
+   Edit Book (修复版)
 ══════════════════════════════════════════ */
 function openEditBookModal() {
-    console.log('openEditBookModal called', {currentBook, currentUser});
-    if (!currentBook) {
-        console.log('无当前书籍');
-        return;
+    if (!currentBook) { showToast('错误：未选择书籍', '#dc2626'); return; }
+    if (currentBook.addedBy !== currentUser.username) { showToast('只能编辑自己推荐的书籍', '#dc2626'); return; }
+
+    // 填充数据
+    document.getElementById('e-title').value = currentBook.title || '';
+    document.getElementById('e-author').value = currentBook.author || '';
+    document.getElementById('e-category').value = currentBook.category || '';
+    document.getElementById('e-year').value = currentBook.year || '';
+    document.getElementById('e-description').value = currentBook.description || '';
+    
+    // 设置类型
+    if (currentBook.type === 'online') {
+        document.getElementById('e-type-online').checked = true;
+    } else {
+        document.getElementById('e-type-offline').checked = true;
     }
     
-    // 检查权限
-    const hasPermission = currentBook.addedBy === currentUser.username;
-    console.log('权限检查:', {addedBy: currentBook.addedBy, currentUser: currentUser.username, hasPermission});
-    if (!hasPermission) {
-        console.log('无权限编辑此书籍');
-        return;
+    // 填充详细信息
+    const a = currentBook.access || {};
+    if (currentBook.type === 'offline') {
+        document.getElementById('e-holder').value = a.holder || '';
+        document.getElementById('e-location').value = a.location || '';
+        document.getElementById('e-contact').value = a.contact || '';
+        document.getElementById('e-rules').value = a.rules || '';
+    } else {
+        document.getElementById('e-url').value = a.url || '';
+        document.getElementById('e-size').value = a.size || '';
+        document.getElementById('e-password').value = a.password || '';
+        document.getElementById('e-note').value = a.note || '';
+        const fmt = document.getElementById('e-format');
+        if (fmt && a.format) fmt.value = a.format;
     }
     
-    const modal = document.getElementById('edit-book-modal');
-    console.log('edit-book-modal element:', modal);
-    modal.classList.remove('hidden');
-
-    console.log('Filling form with:', {
-        title: currentBook.title,
-        author: currentBook.author,
-        category: currentBook.category,
-        year: currentBook.year,
-        description: currentBook.description,
-        type: currentBook.type,
-        access: currentBook.access
-    });
-
-    try {
-        const titleEl = document.getElementById('e-title');
-        const authorEl = document.getElementById('e-author');
-        if (!titleEl) console.warn('找不到 e-title 元素');
-        if (!authorEl) console.warn('找不到 e-author 元素');
-        
-        titleEl && (titleEl.value = currentBook.title || '');
-        authorEl && (authorEl.value = currentBook.author || '');
-        
-        const categoryEl = document.getElementById('e-category');
-        const yearEl = document.getElementById('e-year');
-        const descEl = document.getElementById('e-description');
-        
-        categoryEl && (categoryEl.value = currentBook.category || '');
-        yearEl && (yearEl.value = currentBook.year || '');
-        descEl && (descEl.value = currentBook.description || '');
-
-        const offlineRadio = document.getElementById('e-type-offline');
-        const onlineRadio = document.getElementById('e-type-online');
-        
-        if (offlineRadio) offlineRadio.checked = (currentBook.type !== 'online');
-        if (onlineRadio) onlineRadio.checked = (currentBook.type === 'online');
-        
-        const a = currentBook.access || {};
-        if (currentBook.type === 'offline') {
-            const holderEl = document.getElementById('e-holder');
-            const locationEl = document.getElementById('e-location');
-            const contactEl = document.getElementById('e-contact');
-            const rulesEl = document.getElementById('e-rules');
-            
-            holderEl && (holderEl.value = a.holder || '');
-            locationEl && (locationEl.value = a.location || '');
-            contactEl && (contactEl.value = a.contact || '');
-            rulesEl && (rulesEl.value = a.rules || '');
-        } else {
-            const urlEl = document.getElementById('e-url');
-            const sizeEl = document.getElementById('e-size');
-            const passwordEl = document.getElementById('e-password');
-            const noteEl = document.getElementById('e-note');
-            const fmt = document.getElementById('e-format');
-            
-            urlEl && (urlEl.value = a.url || '');
-            sizeEl && (sizeEl.value = a.size || '');
-            passwordEl && (passwordEl.value = a.password || '');
-            noteEl && (noteEl.value = a.note || '');
-            
-            if (fmt && fmt.options) {
-                const opt = [...fmt.options].find(o => o.value === a.format);
-                if (opt) fmt.value = opt.value;
-            }
-        }
-        
-        console.log('Form values filled successfully');
-    } catch(e) {
-        console.error('填充表单时出错:', e);
-    }
-
     initEditCoverColors(currentBook.cover);
     toggleEditAccessForm();
-    console.log('openEditBookModal complete');
+    
+    // 显示模态框并禁止背景滚动
+    document.getElementById('edit-book-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeEditBookModal() { 
-    console.log('closeEditBookModal called');
-    const modal = document.getElementById('edit-book-modal');
-    console.log('edit-book-modal element:', modal);
-    if (modal) {
-        modal.classList.add('hidden');
-        console.log('Modal hidden:', modal.classList.contains('hidden'));
-    }
+    document.getElementById('edit-book-modal').classList.add('hidden'); 
+    document.body.style.overflow = '';
 }
 
 function toggleEditAccessForm() {
-
-    const type = document.getElementById('e-type-online')?.checked ? 'online' : 'offline';
-    document.getElementById('edit-offline-form').classList.toggle('hidden', type !== 'offline');
-    document.getElementById('edit-online-form').classList.toggle('hidden', type !== 'online');
+    const isOnline = document.getElementById('e-type-online').checked;
+    document.getElementById('edit-offline-form').classList.toggle('hidden', isOnline);
+    document.getElementById('edit-online-form').classList.toggle('hidden', !isOnline);
 }
 
 function initEditCoverColors(selectedCover) {
-    selectedCover = selectedCover || (currentBook && currentBook.cover) || 'book-cover-gradient-1';
+    selectedCover = selectedCover || 'book-cover-gradient-1';
     const container = document.getElementById('edit-cover-colors');
     container.innerHTML = [1,2,3,4,5,6,7,8].map(i => {
         const val = `book-cover-gradient-${i}`;
@@ -1172,82 +1029,88 @@ function initEditCoverColors(selectedCover) {
     }).join('');
 }
 
-function submitEditBook() {
-    console.log('submitEditBook called', currentBook, currentUser);
+// 核心修复：可靠的保存函数
+async function submitEditBook() {
     if (!currentBook || currentBook.addedBy !== currentUser.username) {
-        console.log('权限检查失败或无当前书籍');
+        showToast('无权限编辑', '#dc2626');
         return;
     }
 
-    // 全部用 id 直接读取，零依赖 FormData 和 name 属性
-    const title  = document.getElementById('e-title').value.trim();
-    const author = document.getElementById('e-author').value.trim();
-    if (!title)  { showToast('请填写书名', '#dc2626');  return; }
-    if (!author) { showToast('请填写作者', '#dc2626'); return; }
+    try {
+        // 收集数据
+        const title = document.getElementById('e-title').value.trim();
+        const author = document.getElementById('e-author').value.trim();
+        if (!title) { showToast('请填写书名', '#dc2626'); return; }
+        if (!author) { showToast('请填写作者', '#dc2626'); return; }
 
-    const type  = document.getElementById('e-type-online').checked ? 'online' : 'offline';
-    const cover = document.querySelector('input[name="e-cover"]:checked')?.value
-                  || currentBook.cover || 'book-cover-gradient-1';
+        const type = document.getElementById('e-type-online').checked ? 'online' : 'offline';
+        const cover = document.querySelector('input[name="e-cover"]:checked')?.value || currentBook.cover || 'book-cover-gradient-1';
 
-    let access;
-    if (type === 'offline') {
-        const holder   = document.getElementById('e-holder').value.trim();
-        const location = document.getElementById('e-location').value.trim();
-        if (!holder)   { showToast('请填写持有者', '#dc2626');  return; }
-        if (!location) { showToast('请填写存放位置', '#dc2626'); return; }
-        access = {
-            type: 'offline',
-            holder,
-            location,
-            contact: document.getElementById('e-contact').value.trim(),
-            rules:   document.getElementById('e-rules').value.trim() || '无特殊要求'
+        let access;
+        if (type === 'offline') {
+            const holder = document.getElementById('e-holder').value.trim();
+            const location = document.getElementById('e-location').value.trim();
+            if (!holder) { showToast('请填写持有者', '#dc2626'); return; }
+            if (!location) { showToast('请填写存放位置', '#dc2626'); return; }
+            access = {
+                type: 'offline', holder, location,
+                contact: document.getElementById('e-contact').value.trim(),
+                rules: document.getElementById('e-rules').value.trim() || '无特殊要求'
+            };
+        } else {
+            const url = document.getElementById('e-url').value.trim();
+            if (!url) { showToast('请填写资源链接', '#dc2626'); return; }
+            access = {
+                type: 'online', url,
+                format: document.getElementById('e-format').value || 'PDF',
+                size: document.getElementById('e-size').value.trim(),
+                password: document.getElementById('e-password').value.trim(),
+                note: document.getElementById('e-note').value.trim()
+            };
+        }
+
+        // 查找并更新书籍（保留原有字段）
+        const idx = store.books.findIndex(b => b.id === currentBook.id);
+        if (idx === -1) { showToast('书籍不存在', '#dc2626'); return; }
+
+        store.books[idx] = {
+            ...store.books[idx],  // 保留原有字段
+            title, author,
+            category: document.getElementById('e-category').value.trim() || '未分类',
+            year: document.getElementById('e-year').value.trim(),
+            description: document.getElementById('e-description').value.trim(),
+            cover, type, access
         };
-    } else {
-        const url = document.getElementById('e-url').value.trim();
-        if (!url) { showToast('请填写资源链接', '#dc2626'); return; }
-        const fmtEl = document.getElementById('e-format');
-        access = {
-            type:     'online',
-            url,
-            format:   fmtEl ? fmtEl.value : 'PDF',
-            size:     document.getElementById('e-size').value.trim(),
-            password: document.getElementById('e-password').value.trim(),
-            note:     document.getElementById('e-note').value.trim()
-        };
+        
+        currentBook = store.books[idx];
+
+        // 保存并刷新
+        await saveStore();
+        closeEditBookModal();
+        
+        // 如果详情页打开，刷新它
+        if (!document.getElementById('book-modal').classList.contains('hidden')) {
+            openBookModal(currentBook);
+        }
+        renderBooks();
+        showToast('保存成功 ✓');
+    } catch (err) {
+        console.error('保存失败:', err);
+        showToast('保存失败，请重试', '#dc2626');
     }
-
-    // 直接写回 store 里的对象引用
-    const bookInStore = store.books.find(b => b.id === currentBook.id);
-    if (!bookInStore) { showToast('书籍数据异常', '#dc2626'); return; }
-
-    bookInStore.title       = title;
-    bookInStore.author      = author;
-    bookInStore.category    = document.getElementById('e-category').value.trim() || '未分类';
-    bookInStore.year        = document.getElementById('e-year').value.trim();
-    bookInStore.description = document.getElementById('e-description').value.trim();
-    bookInStore.cover       = cover;
-    bookInStore.type        = type;
-    bookInStore.access      = access;
-    currentBook = bookInStore;  // 同步引用
-
-    saveStore();
-    closeEditBookModal();
-    openBookModal(currentBook);
-    renderBooks();
-    showToast('推荐书籍已更新 ✓');
 }
 
 /* ══════════════════════════════════════════
-   Book detail modal
+   Book Detail & Actions
 ══════════════════════════════════════════ */
 function openBookModal(bookRef) {
     currentBook = store.books.find(b => b.id === bookRef.id) || bookRef;
-
-    document.getElementById('modal-title').textContent       = currentBook.title;
-    document.getElementById('modal-author').textContent      = currentBook.author;
-    document.getElementById('modal-category').textContent    = currentBook.category || '未分类';
-    document.getElementById('modal-year').textContent        = currentBook.year || '未知年份';
-    document.getElementById('modal-added-by').textContent    = `推荐人: ${currentBook.addedByName || currentBook.addedBy}`;
+    
+    document.getElementById('modal-title').textContent = currentBook.title;
+    document.getElementById('modal-author').textContent = currentBook.author;
+    document.getElementById('modal-category').textContent = currentBook.category || '未分类';
+    document.getElementById('modal-year').textContent = currentBook.year || '未知年份';
+    document.getElementById('modal-added-by').textContent = `推荐人: ${currentBook.addedByName || currentBook.addedBy}`;
     document.getElementById('modal-description').textContent = currentBook.description || '暂无简介';
 
     const cover = document.getElementById('modal-cover');
@@ -1267,44 +1130,43 @@ function openBookModal(bookRef) {
 }
 
 function refreshModalStatus() {
-    const statusEl   = document.getElementById('modal-status');
-    const actionBtn  = document.getElementById('action-btn');
-    const returnDiv  = document.getElementById('return-btn-wrap');
-    const feedbackDiv= document.getElementById('recommendation-feedback');
-    const borrowed   = currentBook.status === 'borrowed';
+    const statusEl = document.getElementById('modal-status');
+    const actionBtn = document.getElementById('action-btn');
+    const returnDiv = document.getElementById('return-btn-wrap');
+    const feedbackDiv = document.getElementById('recommendation-feedback');
+    const borrowed = currentBook.status === 'borrowed';
 
     if (!borrowed) {
-        statusEl.className    = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mb-3';
-        statusEl.textContent  = '可借阅';
-        actionBtn.className   = 'w-full bg-stone-800 text-white py-2.5 rounded-lg hover:bg-stone-900 transition-colors text-sm font-medium';
+        statusEl.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mb-3';
+        statusEl.textContent = '可借阅';
+        actionBtn.className = 'w-full bg-stone-800 text-white py-2.5 rounded-lg hover:bg-stone-900 transition-colors text-sm font-medium';
         actionBtn.textContent = currentBook.type === 'online' ? '获取资源' : '我要借阅';
-        actionBtn.onclick     = () => handleAccess();
-        returnDiv.innerHTML   = '';
+        actionBtn.onclick = () => handleAccess();
+        returnDiv.innerHTML = '';
     } else {
-        statusEl.className    = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 mb-3';
-        statusEl.textContent  = `已借出 · ${currentBook.currentBorrower}`;
-        actionBtn.className   = 'w-full bg-stone-200 text-stone-500 py-2.5 rounded-lg text-sm font-medium cursor-default';
+        statusEl.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 mb-3';
+        statusEl.textContent = `已借出 · ${currentBook.currentBorrower}`;
+        actionBtn.className = 'w-full bg-stone-200 text-stone-500 py-2.5 rounded-lg text-sm font-medium cursor-default';
         actionBtn.textContent = '预约提醒';
-        actionBtn.onclick     = () => showToast('📬 已设置提醒');
-        returnDiv.innerHTML   = currentBook.currentBorrower === currentUser.displayName
+        actionBtn.onclick = () => showToast('📬 已设置提醒');
+        returnDiv.innerHTML = currentBook.currentBorrower === currentUser.displayName
             ? `<button id="return-btn" class="w-full mt-2 bg-blue-50 text-blue-700 border border-blue-200 py-2.5 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">归还书籍</button>`
             : '';
         const retBtn = document.getElementById('return-btn');
         if (retBtn) retBtn.addEventListener('click', returnBook);
     }
 
-    // 点赞/踩：所有非推荐人随时可评价，支持切换/取消
     const isRecommender = currentBook.addedBy === currentUser.username;
     if (isRecommender) {
         feedbackDiv.classList.add('hidden');
     } else {
         feedbackDiv.classList.remove('hidden');
-        const myVote     = (currentBook.recommendations || []).find(r => r.user === currentUser.username);
-        const likeBtn    = document.getElementById('like-btn');
+        const myVote = (currentBook.recommendations || []).find(r => r.user === currentUser.username);
+        const likeBtn = document.getElementById('like-btn');
         const dislikeBtn = document.getElementById('dislike-btn');
-        likeBtn.className    = `flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${myVote?.action === 'like'    ? 'bg-green-500 text-white border-green-500' : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100'}`;
-        dislikeBtn.className = `flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${myVote?.action === 'dislike' ? 'bg-red-500 text-white border-red-500'     : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'}`;
-        likeBtn.textContent    = myVote?.action === 'like'    ? '👍 已赞' : '👍 点赞';
+        likeBtn.className = `flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${myVote?.action === 'like' ? 'bg-green-500 text-white border-green-500' : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100'}`;
+        dislikeBtn.className = `flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${myVote?.action === 'dislike' ? 'bg-red-500 text-white border-red-500' : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'}`;
+        likeBtn.textContent = myVote?.action === 'like' ? '👍 已赞' : '👍 点赞';
         dislikeBtn.textContent = myVote?.action === 'dislike' ? '👎 已踩' : '👎 点踩';
     }
 }
@@ -1312,50 +1174,42 @@ function refreshModalStatus() {
 function renderLocationPanel() {
     const el = document.getElementById('modal-location');
     if (currentBook.type === 'online') {
-        el.innerHTML = `<div class="flex items-center gap-2 mb-1"><span>💻</span><span class="font-medium">线上资源</span></div>
-            <div class="text-xs text-stone-500">格式: ${currentBook.access.format||'未知'}</div>`;
+        el.innerHTML = `<div class="flex items-center gap-2 mb-1"><span>💻</span><span class="font-medium">线上资源</span></div><div class="text-xs text-stone-500">格式: ${currentBook.access?.format||'未知'}</div>`;
     } else {
-        const who = currentBook.status === 'borrowed'
-            ? `<span class="text-amber-700 font-medium">借阅中 · ${currentBook.currentBorrower}</span>`
-            : `<span class="font-medium">${currentBook.access.holder}</span>`;
-        el.innerHTML = `<div class="flex items-center gap-2 mb-1"><span>📍</span>${who}</div>
-            <div class="text-xs text-stone-500">${currentBook.access.location||''}</div>`;
+        const who = currentBook.status === 'borrowed' ? `<span class="text-amber-700 font-medium">借阅中 · ${currentBook.currentBorrower}</span>` : `<span class="font-medium">${currentBook.access?.holder}</span>`;
+        el.innerHTML = `<div class="flex items-center gap-2 mb-1"><span>📍</span>${who}</div><div class="text-xs text-stone-500">${currentBook.access?.location||''}</div>`;
     }
 }
 
 function renderAccessDetails() {
     const el = document.getElementById('modal-access-details');
+    const a = currentBook.access || {};
     if (currentBook.type === 'online') {
         el.innerHTML = `
-            <div class="flex justify-between py-2 border-b border-stone-100"><span>链接</span>
-                <a href="${currentBook.access.url}" target="_blank" class="text-amber-700 hover:underline truncate max-w-xs">${currentBook.access.url}</a></div>
-            <div class="flex justify-between py-2 border-b border-stone-100"><span>格式</span><span>${currentBook.access.format||'-'}</span></div>
-            ${currentBook.access.password?`<div class="flex justify-between py-2 border-b border-stone-100"><span>密码</span><span class="font-mono bg-stone-100 px-2 rounded">${currentBook.access.password}</span></div>`:''}
-            ${currentBook.access.note?`<div class="mt-2 text-amber-700 bg-amber-50 p-2 rounded text-xs">${currentBook.access.note}</div>`:''}`;
+            <div class="flex justify-between py-2 border-b border-stone-100"><span>链接</span><a href="${a.url}" target="_blank" class="text-amber-700 hover:underline truncate max-w-xs">${a.url}</a></div>
+            <div class="flex justify-between py-2 border-b border-stone-100"><span>格式</span><span>${a.format||'-'}</span></div>
+            ${a.password?`<div class="flex justify-between py-2 border-b border-stone-100"><span>密码</span><span class="font-mono bg-stone-100 px-2 rounded">${a.password}</span></div>`:''}
+            ${a.note?`<div class="mt-2 text-amber-700 bg-amber-50 p-2 rounded text-xs">${a.note}</div>`:''}`;
     } else {
         el.innerHTML = `
-            <div class="flex justify-between py-2 border-b border-stone-100"><span>持有者</span><span class="font-medium">${currentBook.access.holder}</span></div>
-            <div class="flex justify-between py-2 border-b border-stone-100"><span>位置</span><span>${currentBook.access.location}</span></div>
-            ${currentBook.access.contact?`<div class="flex justify-between py-2 border-b border-stone-100"><span>联系方式</span><span class="text-amber-700">${currentBook.access.contact}</span></div>`:''}
-            ${currentBook.status==='borrowed'?`<div class="flex justify-between py-2 border-b border-stone-100"><span>借阅人</span><span class="text-amber-700 font-medium">${currentBook.currentBorrower}</span></div>
-                <div class="flex justify-between py-2 border-b border-stone-100"><span>借出日期</span><span>${currentBook.borrowedAt||'-'}</span></div>`:''}
-            <div class="mt-3 text-stone-500 text-xs bg-stone-50 p-3 rounded"><span class="font-medium">借阅规则：</span>${currentBook.access.rules||'无特殊要求'}</div>`;
+            <div class="flex justify-between py-2 border-b border-stone-100"><span>持有者</span><span class="font-medium">${a.holder}</span></div>
+            <div class="flex justify-between py-2 border-b border-stone-100"><span>位置</span><span>${a.location}</span></div>
+            ${a.contact?`<div class="flex justify-between py-2 border-b border-stone-100"><span>联系方式</span><span class="text-amber-700">${a.contact}</span></div>`:''}
+            ${currentBook.status==='borrowed'?`<div class="flex justify-between py-2 border-b border-stone-100"><span>借阅人</span><span class="text-amber-700 font-medium">${currentBook.currentBorrower}</span></div><div class="flex justify-between py-2 border-b border-stone-100"><span>借出日期</span><span>${currentBook.borrowedAt||'-'}</span></div>`:''}
+            <div class="mt-3 text-stone-500 text-xs bg-stone-50 p-3 rounded"><span class="font-medium">借阅规则：</span>${a.rules||'无特殊要求'}</div>`;
     }
 }
 
 function renderRecommendationRatings() {
-    const el      = document.getElementById('ratings-display');
+    const el = document.getElementById('ratings-display');
     const ratings = currentBook.recommendations || [];
-    const likes   = ratings.filter(r => r.action === 'like').length;
-    const dislikes= ratings.filter(r => r.action === 'dislike').length;
+    const likes = ratings.filter(r => r.action === 'like').length;
+    const dislikes = ratings.filter(r => r.action === 'dislike').length;
     if (!ratings.length) {
         el.innerHTML = '<div class="text-xs text-stone-400">暂无评价</div>';
         return;
     }
-    el.innerHTML = `<div class="flex items-center gap-3">
-        <span class="flex items-center gap-1 text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">👍 ${likes}</span>
-        <span class="flex items-center gap-1 text-sm font-medium text-red-500 bg-red-50 px-3 py-1 rounded-full">👎 ${dislikes}</span>
-    </div>`;
+    el.innerHTML = `<div class="flex items-center gap-3"><span class="flex items-center gap-1 text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">👍 ${likes}</span><span class="flex items-center gap-1 text-sm font-medium text-red-500 bg-red-50 px-3 py-1 rounded-full">👎 ${dislikes}</span></div>`;
 }
 
 function closeBookModal() {
@@ -1364,13 +1218,11 @@ function closeBookModal() {
     currentBook = null;
 }
 
-/* ══════════════════════════════════════════
-   Borrow / Return
-══════════════════════════════════════════ */
 function handleAccess() {
     if (currentBook.type === 'online') {
-        window.open(currentBook.access.url, '_blank');
-        if (!currentBook.readers.find(r => r.name === currentUser.displayName)) {
+        window.open(currentBook.access?.url, '_blank');
+        if (!currentBook.readers?.find(r => r.name === currentUser.displayName)) {
+            if (!currentBook.readers) currentBook.readers = [];
             currentBook.readers.unshift({ name: currentUser.displayName, date: today(), avatar: currentUser.avatar });
             saveStore();
             renderReaders(currentBook.readers);
@@ -1381,11 +1233,11 @@ function handleAccess() {
         showToast(`该书已被「${currentBook.currentBorrower}」借出`, '#d97706');
         return;
     }
-    if (!confirm(`确认借阅《${currentBook.title}》？\n持有者：${currentBook.access.holder}，位置：${currentBook.access.location}\n\n确认后书籍状态将更新为「已借出」`)) return;
-
+    if (!confirm(`确认借阅《${currentBook.title}》？\n持有者：${currentBook.access?.holder}，位置：${currentBook.access?.location}`)) return;
     currentBook.status = 'borrowed';
     currentBook.currentBorrower = currentUser.displayName;
     currentBook.borrowedAt = today();
+    if (!currentBook.readers) currentBook.readers = [];
     if (!currentBook.readers.find(r => r.name === currentUser.displayName)) {
         currentBook.readers.unshift({ name: currentUser.displayName, date: today(), avatar: currentUser.avatar });
     }
@@ -1395,7 +1247,7 @@ function handleAccess() {
     renderAccessDetails();
     renderReaders(currentBook.readers);
     renderBooks();
-    showToast(`📗 借阅成功！请联系 ${currentBook.access.holder} 取书`);
+    showToast(`📗 借阅成功！请联系 ${currentBook.access?.holder} 取书`);
 }
 
 function returnBook() {
@@ -1409,7 +1261,7 @@ function returnBook() {
     renderLocationPanel();
     renderAccessDetails();
     renderBooks();
-    showToast('📘 已归还，状态已更新', '#2563eb');
+    showToast('📘 已归还', '#2563eb');
 }
 
 function rateRecommendation(action) {
@@ -1417,13 +1269,12 @@ function rateRecommendation(action) {
     if (!currentBook.recommendations) currentBook.recommendations = [];
     const existing = currentBook.recommendations.find(r => r.user === currentUser.username);
     if (existing && existing.action === action) {
-        // 再次点同一个 → 取消
         currentBook.recommendations = currentBook.recommendations.filter(r => r.user !== currentUser.username);
         showToast('已取消投票');
     } else {
         currentBook.recommendations = currentBook.recommendations.filter(r => r.user !== currentUser.username);
         currentBook.recommendations.push({ user: currentUser.username, action });
-        showToast(action === 'like' ? '👍 已点赞推荐人' : '👎 已点踩推荐人');
+        showToast(action === 'like' ? '👍 已点赞' : '👎 已点踩');
     }
     saveStore();
     refreshModalStatus();
@@ -1434,22 +1285,19 @@ function rateRecommendation(action) {
 
 function deleteCurrentBook() {
     if (!currentBook) return;
-    if (!confirm(`确定要删除《${currentBook.title}》吗？`)) return;
+    if (!confirm(`确定删除《${currentBook.title}》吗？`)) return;
     store.books = store.books.filter(b => b.id !== currentBook.id);
     delete store.notes[currentBook.id];
     saveStore();
     closeBookModal();
     renderBooks();
-    showToast('推荐书籍已删除');
+    showToast('已删除');
 }
 
-/* ══════════════════════════════════════════
-   Readers & Notes
-══════════════════════════════════════════ */
 function renderReaders(readers) {
-    document.getElementById('reader-count').textContent = `${readers.length} 位读者`;
+    document.getElementById('reader-count').textContent = `${readers?.length || 0} 位读者`;
     const el = document.getElementById('readers-list');
-    if (!readers.length) { el.innerHTML = '<div class="text-center text-stone-400 py-8">暂无阅读记录</div>'; return; }
+    if (!readers?.length) { el.innerHTML = '<div class="text-center text-stone-400 py-8">暂无阅读记录</div>'; return; }
     el.innerHTML = readers.map(r => `
         <div class="flex items-center gap-3 p-3 bg-white rounded-lg border border-stone-200">
             <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-xl">${r.avatar}</div>
@@ -1460,17 +1308,12 @@ function renderReaders(readers) {
 function renderNotes(bookId) {
     const el = document.getElementById('notes-list');
     const notes = store.notes[bookId] || [];
-    if (!notes.length) { el.innerHTML = '<div class="text-center text-stone-400 py-8">暂无备注，成为第一个写备注的人吧</div>'; return; }
+    if (!notes.length) { el.innerHTML = '<div class="text-center text-stone-400 py-8">暂无备注</div>'; return; }
     el.innerHTML = notes.map(n => `
         <div class="note-card rounded-lg p-4 shadow-sm">
             <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2">
-                    <span class="font-bold text-stone-800">${n.author}</span>
-                    <span class="text-xs text-stone-500">${n.date}</span>
-                </div>
-                <div class="flex gap-0.5">
-                    ${[1,2,3,4,5].map(i=>`<svg class="w-4 h-4 ${i<=n.rating?'text-amber-400 fill-current':'text-stone-300'}" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>`).join('')}
-                </div>
+                <div class="flex items-center gap-2"><span class="font-bold text-stone-800">${n.author}</span><span class="text-xs text-stone-500">${n.date}</span></div>
+                <div class="flex gap-0.5">${[1,2,3,4,5].map(i=>`<svg class="w-4 h-4 ${i<=n.rating?'text-amber-400 fill-current':'text-stone-300'}" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>`).join('')}</div>
             </div>
             <p class="text-stone-700 text-sm leading-relaxed">${n.content}</p>
         </div>`).join('');
@@ -1483,7 +1326,8 @@ function addNote() {
     const rating = Math.min(5, Math.max(1, parseInt(prompt('请评分（1-5星）：', '5')) || 5));
     if (!store.notes[currentBook.id]) store.notes[currentBook.id] = [];
     store.notes[currentBook.id].unshift({ author: currentUser.displayName, date: today(), content: content.trim(), rating });
-    if (!currentBook.readers.find(r => r.name === currentUser.displayName)) {
+    if (!currentBook.readers?.find(r => r.name === currentUser.displayName)) {
+        if (!currentBook.readers) currentBook.readers = [];
         currentBook.readers.unshift({ name: currentUser.displayName, date: today(), avatar: currentUser.avatar });
     }
     saveStore();
@@ -1491,9 +1335,6 @@ function addNote() {
     showToast('备注已保存 ✓');
 }
 
-/* ══════════════════════════════════════════
-   Tabs
-══════════════════════════════════════════ */
 function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('tab-active', b.dataset.tab === tab));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
@@ -1501,19 +1342,17 @@ function switchTab(tab) {
 }
 
 /* ══════════════════════════════════════════
-   双榜单
+   Leaderboards
 ══════════════════════════════════════════ */
 function calcLeaderboard() {
     const stats = {};
-    store.users.forEach(u => {
-        stats[u.username] = { username: u.username, displayName: u.displayName, avatar: u.avatar, likes: 0, dislikes: 0, books: 0 };
-    });
+    store.users.forEach(u => { stats[u.username] = { username: u.username, displayName: u.displayName, avatar: u.avatar, likes: 0, dislikes: 0, books: 0 }; });
     store.books.forEach(book => {
         const by = book.addedBy;
         if (!stats[by]) stats[by] = { username: by, displayName: book.addedByName || by, avatar: '📚', likes: 0, dislikes: 0, books: 0 };
         stats[by].books++;
         (book.recommendations || []).forEach(r => {
-            if (r.action === 'like')    stats[by].likes++;
+            if (r.action === 'like') stats[by].likes++;
             if (r.action === 'dislike') stats[by].dislikes++;
         });
     });
@@ -1522,60 +1361,65 @@ function calcLeaderboard() {
 
 function renderLeaderboards() {
     const all = calcLeaderboard();
-
-    // ── 点赞榜 ──
-    const likeList    = [...all].sort((a,b) => b.likes - a.likes);
+    
+    const likeList = [...all].sort((a,b) => b.likes - a.likes);
     const likeTitleEl = document.getElementById('like-board-title');
-    const likeEl      = document.getElementById('like-leaderboard');
-    if (!likeEl) return;
+    const likeEl = document.getElementById('like-leaderboard');
     const topLiker = likeList.find(s => s.likes > 0);
-    if (likeTitleEl) likeTitleEl.innerHTML = topLiker
-        ? `大家都爱<span class="text-amber-400 font-black"> ${topLiker.displayName.toUpperCase()}</span>`
-        : '大家都爱…';
-    const likeFiltered = likeList.filter(s => s.likes > 0);
-    likeEl.innerHTML = likeFiltered.length ? likeFiltered.map((s,i) => {
+    if (likeTitleEl) likeTitleEl.innerHTML = topLiker ? `大家都爱<span class="text-amber-400 font-black"> ${topLiker.displayName.toUpperCase()}</span>` : '大家都爱…';
+    likeEl.innerHTML = likeList.filter(s => s.likes > 0).map((s,i) => {
         const medals = ['🥇','🥈','🥉'];
         const isMe = s.username === currentUser?.username;
-        return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-xl transition-colors ${isMe?'bg-amber-50 border border-amber-200':'hover:bg-stone-50'}">
+        return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-xl ${isMe?'bg-amber-50 border border-amber-200':'hover:bg-stone-50'}">
             <div class="w-5 text-center flex-shrink-0">${medals[i]||`<span class="text-xs font-bold text-stone-400">${i+1}</span>`}</div>
             <div class="w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-sm flex-shrink-0">${s.avatar}</div>
-            <div class="flex-1 min-w-0"><div class="text-xs font-semibold text-stone-800 truncate">${s.displayName}${isMe?' <span class="text-amber-500">我</span>':''}</div><div class="text-xs text-stone-400">${s.books}本推荐</div></div>
+            <div class="flex-1 min-w-0"><div class="text-xs font-semibold text-stone-800 truncate">${s.displayName}${isMe?' <span class="text-amber-500">我</span>':''}</div><div class="text-xs text-stone-400">${s.books}本</div></div>
             <div class="text-xs font-bold text-green-600 flex-shrink-0">👍${s.likes}</div>
         </div>`;
-    }).join('') : '<div class="text-xs text-stone-400 text-center py-3">暂无数据</div>';
+    }).join('') || '<div class="text-xs text-stone-400 text-center py-3">暂无数据</div>';
 
-    // ── 点踩榜 ──
-    const dislikeList    = [...all].sort((a,b) => b.dislikes - a.dislikes);
+    const dislikeList = [...all].sort((a,b) => b.dislikes - a.dislikes);
     const dislikeTitleEl = document.getElementById('dislike-board-title');
-    const dislikeEl      = document.getElementById('dislike-leaderboard');
-    if (!dislikeEl) return;
+    const dislikeEl = document.getElementById('dislike-leaderboard');
     const topDisliker = dislikeList.find(s => s.dislikes > 0);
-    if (dislikeTitleEl) dislikeTitleEl.innerHTML = topDisliker
-        ? `大家都雷<span class="text-stone-900 font-black"> ${topDisliker.displayName.toUpperCase()}</span>`
-        : '大家都雷…';
-    const dislikeFiltered = dislikeList.filter(s => s.dislikes > 0);
-    dislikeEl.innerHTML = dislikeFiltered.length ? dislikeFiltered.map((s,i) => {
+    if (dislikeTitleEl) dislikeTitleEl.innerHTML = topDisliker ? `大家都雷<span class="text-stone-900 font-black"> ${topDisliker.displayName.toUpperCase()}</span>` : '大家都雷…';
+    dislikeEl.innerHTML = dislikeList.filter(s => s.dislikes > 0).map((s,i) => {
         const medals = ['💀','😵','😤'];
         const isMe = s.username === currentUser?.username;
-        return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-xl transition-colors ${isMe?'bg-red-50 border border-red-100':'hover:bg-stone-50'}">
+        return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-xl ${isMe?'bg-red-50 border border-red-100':'hover:bg-stone-50'}">
             <div class="w-5 text-center flex-shrink-0">${medals[i]||`<span class="text-xs font-bold text-stone-400">${i+1}</span>`}</div>
             <div class="w-7 h-7 rounded-full bg-gradient-to-br from-stone-100 to-stone-200 flex items-center justify-center text-sm flex-shrink-0">${s.avatar}</div>
-            <div class="flex-1 min-w-0"><div class="text-xs font-semibold text-stone-800 truncate">${s.displayName}${isMe?' <span class="text-red-400">我</span>':''}</div><div class="text-xs text-stone-400">${s.books}本推荐</div></div>
+            <div class="flex-1 min-w-0"><div class="text-xs font-semibold text-stone-800 truncate">${s.displayName}${isMe?' <span class="text-red-400">我</span>':''}</div><div class="text-xs text-stone-400">${s.books}本</div></div>
             <div class="text-xs font-bold text-red-500 flex-shrink-0">👎${s.dislikes}</div>
         </div>`;
-    }).join('') : '<div class="text-xs text-stone-400 text-center py-3">暂无数据</div>';
+    }).join('') || '<div class="text-xs text-stone-400 text-center py-3">暂无数据</div>';
 }
 
-/* ══════════════════════════════════════════
-   Export
-══════════════════════════════════════════ */
 function exportData() {
     const blob = new Blob([JSON.stringify(store, null, 2)], { type:'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = Object.assign(document.createElement('a'), { href: url, download: `bookshelf-${today()}.json` });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), { href: url, download: `bookshelf-${today()}.json` });
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('备份文件已下载 ✓');
+    showToast('备份已下载 ✓');
+}
+
+// 自动同步
+function startAutoSync() {
+    if (!USE_CLOUD) return;
+    setInterval(async () => {
+        try {
+            const fresh = await fetchStore();
+            if (JSON.stringify(fresh) !== JSON.stringify(store)) {
+                store = fresh;
+                if (document.getElementById('main-app').classList.contains('hidden')) {
+                    renderUserGrid();
+                } else {
+                    renderBooks();
+                }
+            }
+        } catch(e) {}
+    }, 8000);
 }
 </script>
 </body>
